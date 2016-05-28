@@ -46,5 +46,5 @@ void main() {
     vec3 color = 
     	phongLight(normalize(v_viewDir), normalize(v_normal), material, source);
 
-	gl_FragColor = vec4(color, 1.0);
+	gl_FragColor = vec4(materialDiff, 1.0);
 }

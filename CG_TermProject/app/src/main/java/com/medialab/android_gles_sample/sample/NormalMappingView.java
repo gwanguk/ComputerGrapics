@@ -2,6 +2,7 @@ package com.medialab.android_gles_sample.sample;
 
 import com.medialab.android_gles_sample.R;
 import com.medialab.android_gles_sample.SampleView;
+import com.medialab.android_gles_sample.renderer.BasicShader;
 import com.medialab.android_gles_sample.renderer.FileLoader;
 import com.medialab.android_gles_sample.renderer.TexData;
 
@@ -12,9 +13,13 @@ public class NormalMappingView extends SampleView {
 	@Override
 	public void OnInit()
 	{
-		String fs = FileLoader.ReadTxtFile(this, "shader/view_nor/nor.fs");
-		String vs = FileLoader.ReadTxtFile(this, "shader/view_nor/nor.vs");
-		mRenderer.SetProgram(vs, fs);
+		String vs = FileLoader.ReadTxtFile(this, "shader/terrian/terrian.vs");
+		String fs = FileLoader.ReadTxtFile(this, "shader/terrian/terrian.fs");
+		mRenderer.SetProgram(vs, fs, mRenderer.mShader);
+
+		vs = FileLoader.ReadTxtFile(this, "shader/terrian/bird.vs");
+		fs = FileLoader.ReadTxtFile(this, "shader/terrian/bird.fs");
+		mRenderer.SetProgram(vs, fs, mRenderer.targetShader);
 
 		InputStream teapot = FileLoader.GetStream(this, "obj3d/teapot");
 

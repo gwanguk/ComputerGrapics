@@ -51,8 +51,8 @@ public class BasicShader {
 	{
 		GLES20.glUseProgram(mProgram);
 
-		return BasicUtils.CheckGLerror("glUseProgram");
-	}
+	return BasicUtils.CheckGLerror("glUseProgram");
+}
 
 
 	int LoadShader(int shaderType, String source)

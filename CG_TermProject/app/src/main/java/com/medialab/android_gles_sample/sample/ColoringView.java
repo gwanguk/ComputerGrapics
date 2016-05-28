@@ -12,9 +12,13 @@ public class ColoringView extends SampleView {
 	@Override
 	public void OnInit()
 	{
-		String vs = FileLoader.ReadTxtFile(this, "shader/view_color/color.vs");
-		String fs = FileLoader.ReadTxtFile(this, "shader/view_color/color.fs");
-		mRenderer.SetProgram(vs, fs);
+		String vs = FileLoader.ReadTxtFile(this, "shader/terrian/terrian.vs");
+		String fs = FileLoader.ReadTxtFile(this, "shader/terrian/terrian.fs");
+		mRenderer.SetProgram(vs, fs, mRenderer.mShader);
+
+		vs = FileLoader.ReadTxtFile(this, "shader/terrian/bird.vs");
+		fs = FileLoader.ReadTxtFile(this, "shader/terrian/bird.fs");
+		mRenderer.SetProgram(vs, fs, mRenderer.targetShader);
 
 		InputStream teapot = FileLoader.GetStream(this, "obj3d/deer");
 

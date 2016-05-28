@@ -22,16 +22,26 @@ public class FragLightingView extends SampleView {
 	{
 		String vs = FileLoader.ReadTxtFile(this, "shader/terrian/terrian.vs");
 		String fs = FileLoader.ReadTxtFile(this, "shader/terrian/terrian.fs");
-		mRenderer.SetProgram(vs, fs);
+		mRenderer.SetProgram(vs, fs, mRenderer.mShader);
 
-		InputStream mountain = FileLoader.GetStream(this, "obj3d/mountain");
+		vs = FileLoader.ReadTxtFile(this, "shader/bird/bird.vs");
+		fs = FileLoader.ReadTxtFile(this, "shader/bird/bird.fs");
+		mRenderer.SetProgram(vs, fs, mRenderer.targetShader);
 
-		TexData[] textJ = new TexData[1];
-		textJ[0] =  FileLoader.ReadTexture(this, R.drawable.mountain);
+		InputStream terrian = FileLoader.GetStream(this, "obj3d/rectangle");
+		InputStream cube = FileLoader.GetStream(this, "obj3d/cube");
 
+		TexData[] text_terrian = new TexData[1];
+		text_terrian[0] =  FileLoader.ReadTexture(this, R.drawable.mountain);
 
-		mRenderer.SetNewModel(mountain, mRenderer.terrian);
-		mRenderer.SetTexture(TexData.Type.TEXDATA_GENERAL, textJ, mRenderer.terrian);
+		TexData[] text_target = new TexData[1];
+		text_target[0] =  FileLoader.ReadTexture(this, R.drawable.tex_c_brick);
+
+		mRenderer.SetNewModel(terrian, mRenderer.terrian);
+		mRenderer.SetNewModel(cube, mRenderer.target);
+
+		mRenderer.SetTexture(TexData.Type.TEXDATA_GENERAL, text_terrian, mRenderer.terrian);
+		mRenderer.SetTexture(TexData.Type.TEXDATA_GENERAL,text_target, mRenderer.target);
 
 		mRenderer.Initialize();
 

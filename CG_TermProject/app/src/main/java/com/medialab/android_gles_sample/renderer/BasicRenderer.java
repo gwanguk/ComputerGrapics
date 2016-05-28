@@ -1,7 +1,9 @@
 package com.medialab.android_gles_sample.renderer;
 
 
+import android.graphics.Shader;
 import android.opengl.GLES20;
+import android.opengl.GLES30;
 import android.util.Log;
 
 import com.medialab.android_gles_sample.joml.AxisAngle4f;
@@ -64,7 +66,7 @@ public class BasicRenderer {
 		}
 	}
 
-
+	Vector3f origin = new Vector3f(0,0,0);
 
 	public static int V_ATTRIB_POSITION = 0;
 	public static int V_ATTRIB_NORMAL = 1;
@@ -81,10 +83,12 @@ public class BasicRenderer {
 	protected double mDeltaTime;
 
 	public OBJECT terrian ;
-	public OBJECT bird;
+	public OBJECT target;
 
-	BasicShader mShader;
-	BasicCamera mCamera;
+	public BasicShader mShader;
+	public BasicShader targetShader;
+
+	public BasicCamera mCamera;
 
 	boolean mIsAutoRotateEye;
 	boolean mIsFill;
@@ -115,8 +119,10 @@ public class BasicRenderer {
 
 		mCamera = new BasicCamera();
 		mShader = new BasicShader();
+		targetShader = new BasicShader();
 
 		terrian = new OBJECT();
+		target = new OBJECT();
 	}
 
 	public BasicCamera GetCamera() {
@@ -125,15 +131,15 @@ public class BasicRenderer {
 
 	// Interface functions
 /// Sets vertex shader and fragment shader for rendering
-	public boolean SetProgram(String vertexSource, String fragmentSource) {
-		mShader.CreateProgram(vertexSource, fragmentSource);
+	public boolean SetProgram(String vertexSource, String fragmentSource, BasicShader shader) {
+		shader.CreateProgram(vertexSource, fragmentSource);
 
-		if (mShader.GetProgram() == 0) {
+		if (shader.GetProgram() == 0) {
 			Log.e(TAG, "Could not create program.\n");
 			return false;
 		}
 
-		mShader.Use();
+		//mShader.Use();
 
 		return true;
 	}
@@ -176,6 +182,9 @@ public class BasicRenderer {
 		CountTickInit();
 
 		CreateVbo(terrian);
+		CreateVbo(target);
+
+
 		SetState();
 
 		return true;
@@ -201,8 +210,6 @@ public class BasicRenderer {
 
 		GLES20.glClear(GLES20.GL_DEPTH_BUFFER_BIT | GLES20.GL_COLOR_BUFFER_BIT);
 		BasicUtils.CheckGLerror("glClear");
-
-		PassUniform(0);
 
 		Draw();
 	}
@@ -284,7 +291,7 @@ public class BasicRenderer {
 				obj.mIndices,
 				GLES20.GL_STATIC_DRAW);
 
-		int stride = 4 * (3		+ 3 + 2); // stride: sizeof(float) * number of components
+		int stride = 4 * (3	+ 3 + 2); // stride: sizeof(float) * number of components
 		int offset = 0;
 		GLES20.glEnableVertexAttribArray(V_ATTRIB_POSITION);
 		GLES20.glVertexAttribPointer(V_ATTRIB_POSITION, 3, GLES20.GL_FLOAT, false, stride, offset);
@@ -340,6 +347,8 @@ public class BasicRenderer {
 		return P;
 	}
 
+
+
 	float[] GetWorldMatrix(){
 		float[] farray = new float[4*4];
 		FloatBuffer fb = FloatBuffer.allocate(4 * 4);
@@ -365,7 +374,8 @@ public class BasicRenderer {
 
 					Vector3f axisInCameraSpace = va.cross(vb).normalize();
 
-					fb.put(GetCamera().GetViewMat());
+
+					fb.put(GetCamera().GetViewMat(origin));
 					fb.position(0);
 					Matrix4f cameraToObjectSpace = new Matrix4f(fb).invert();
 					Vector3f axisInObjectSpace = new Matrix3f(cameraToObjectSpace).transform(axisInCameraSpace).normalize();
@@ -386,7 +396,11 @@ public class BasicRenderer {
 
 		return farray;
 	}
-	float[] GetWorldMatrix_MOUNTAIN()
+
+	Vector3f movement = new Vector3f(0.0f, 0.0f, 0.0f);
+	Vector3f target_location = new Vector3f();
+	int left =0;
+	float[] GetWorldMatrix_TARTGET()
 	{
 		float[] farray = new float[4*4];
 		Matrix4f out = new Matrix4f();
@@ -396,13 +410,63 @@ public class BasicRenderer {
 		Matrix4f rotationMat = new Matrix4f();
 		Matrix4f viewMat= new Matrix4f();
 
-		float[] viewMat_arr = GetCamera().GetViewMat();
+		Vector3f zero = new Vector3f(0,0,0);
+		float[] viewMat_arr = GetCamera().GetViewMat(zero);
 		viewMat.set(viewMat_arr);
 
-		out = (transMat.translate(0.0f, 0.0f, 0.0f).mul(rotationMat.rotate(0, 0.0f, 0.1f, 0.0f).mul(scaleMat.scale(5.0f))));
+		if(movement.x>-30.0f) {
+			movement.add(-0.1f, 0.0f, 0.0f);
+		}
+		else if(movement.x<=-30.0f)
+		{
+			movement.add(0.1f, 0.0f, 0.0f);
+		}
+
+		target_location.set(15.0f+movement.x,15.0f, -15.0f);
+		out = (transMat.translate(15.0f+movement.x,15.0f, -15.0f).mul(rotationMat.rotate(0, 0.0f, 0.1f, 0.0f).mul(scaleMat.scale(1.0f))));
 		out.get(farray);
 
 		return farray;
+	}
+
+	float[] GetWorldMatrix_TERRIAN()
+	{
+		float[] farray = new float[4*4];
+		Matrix4f out = new Matrix4f();
+
+		Matrix4f scaleMat =new Matrix4f();
+		Matrix4f transMat = new Matrix4f();
+		Matrix4f rotationMat = new Matrix4f();
+		Matrix4f viewMat= new Matrix4f();
+
+		Vector3f zero = new Vector3f(0,0,0);
+		float[] viewMat_arr = GetCamera().GetViewMat(zero);
+		viewMat.set(viewMat_arr);
+
+		out = (transMat.translate(0.0f, 0.0f, 0.0f).mul(rotationMat.rotate(0, 0.0f, 0.1f, 0.0f).mul(scaleMat.scale(1.0f))));
+		out.get(farray);
+
+		return farray;
+	}
+
+	float dx=0.0f, dy=0.0f, dz=0.0f ;
+	float[] GetViewMatrix()
+	{
+
+		if (mIsTouchOn) {
+			dz-=0.2f;
+			GetCamera().setAT(target_location);
+		}
+		else {
+			dz = 0.0f;
+			GetCamera().setAT(origin);
+		}
+		Vector3f transEYE = new Vector3f(dx, dy, dz);
+
+
+		float[] viewMat = GetCamera().GetViewMat(transEYE);
+
+		return viewMat;
 	}
 
 	float[] GetInverseTranspose(float[] inArray) {
@@ -417,33 +481,51 @@ public class BasicRenderer {
 		return outArray;
 	}
 
-	void PassUniform(int type) {
+	void PassUniform(BasicShader shader, int type) {
 //		float[] worldMat = new float[16];
 //		Matrix.setIdentityM(worldMat, 0);
-		float[] worldMat = GetWorldMatrix_MOUNTAIN();
-		float[] viewMat = mCamera.GetViewMat();
+		float[] worldMat;
+		if(type==0)
+			worldMat = GetWorldMatrix_TERRIAN();
+		else if(type==1)
+			worldMat = GetWorldMatrix_TARTGET();
+		else
+			worldMat = GetWorldMatrix_TARTGET();
+
+		float[] viewMat = GetViewMatrix();
 		float[] projMat = mCamera.GetPerspectiveMat();
 
-		mShader.SetUniform("worldMat", worldMat);
-		mShader.SetUniform("viewMat", viewMat);
-		mShader.SetUniform("projMat", projMat);
-		mShader.SetUniform("invTransWorldMat", GetInverseTranspose(worldMat));
-		mShader.SetUniform("s_tex0", 0);
-		mShader.SetUniform("s_texNor", TEX_POS_NORMAL);
-		mShader.SetUniform("eyePos", mCamera.GetEye());
-		mShader.SetUniform("lightPos", 50.0f, 50.0f, 50.0f);
-		mShader.SetUniform("materialDiff", 0.8f, 1.0f, 0.7f);
-		mShader.SetUniform("materialSpec", 0.8f, 1.0f, 0.7f);
-		mShader.SetUniform("materialAmbi", 0.0f, 0.0f, 0.0f);
-		mShader.SetUniform("materialEmit", 0.0f, 0.0f, 0.0f);
-		mShader.SetUniform("materialSh", 100.0f);
-		mShader.SetUniform("sourceDiff", 0.7f, 0.7f, 0.7f);
-		mShader.SetUniform("sourceSpec", 1.0f, 1.0f, 1.0f);
-		mShader.SetUniform("sourceAmbi", 0.0f, 0.0f, 0.0f);
+		shader.SetUniform("worldMat", worldMat);
+		shader.SetUniform("viewMat", viewMat);
+		shader.SetUniform("projMat", projMat);
+		shader.SetUniform("invTransWorldMat", GetInverseTranspose(worldMat));
+		shader.SetUniform("s_tex0", 0);
+		shader.SetUniform("s_texNor", TEX_POS_NORMAL);
+		shader.SetUniform("eyePos", mCamera.GetEye());
+		shader.SetUniform("lightPos", 50.0f, 50.0f, 50.0f);
+		shader.SetUniform("materialDiff", 0.8f, 1.0f, 0.7f);
+		shader.SetUniform("materialSpec", 0.8f, 1.0f, 0.7f);
+		shader.SetUniform("materialAmbi", 0.0f, 0.0f, 0.0f);
+		shader.SetUniform("materialEmit", 0.0f, 0.0f, 0.0f);
+		shader.SetUniform("materialSh", 100.0f);
+		shader.SetUniform("sourceDiff", 0.7f, 0.7f, 0.7f);
+		shader.SetUniform("sourceSpec", 1.0f, 1.0f, 1.0f);
+		shader.SetUniform("sourceAmbi", 0.0f, 0.0f, 0.0f);
 	}
 
 	void Draw() {
+
+
+		CreateVbo(target);
+		PassUniform(targetShader, 0);
+		targetShader.Use();
+		GLES20.glDrawElements(GLES20.GL_TRIANGLES, target.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
+
+		CreateVbo(terrian);
+		PassUniform(mShader, 1);
+		mShader.Use();
 		GLES20.glDrawElements(GLES20.GL_TRIANGLES, terrian.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
+
 		BasicUtils.CheckGLerror("glDrawElements");
 	}
 

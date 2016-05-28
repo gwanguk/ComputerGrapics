@@ -2,6 +2,8 @@ package com.medialab.android_gles_sample.renderer;
 
 import android.opengl.Matrix;
 
+import com.medialab.android_gles_sample.joml.Vector3f;
+
 public class BasicCamera {
 
 	public static double TORADIAN = Math.PI / 180.0;
@@ -40,6 +42,10 @@ public class BasicCamera {
 		UpdateAngle();
 	}
 
+	public void setAT (Vector3f vec){
+		this.mAt = new Vec3(vec.x, vec.y, vec.z);
+	}
+
 	Vec3 projToVector(Vec3 target, Vec3 axis)
 	{
 		float numerator = Vec3.dot(target, axis);
@@ -76,9 +82,9 @@ public class BasicCamera {
 		return mPerspectiveMat;
 	}
 
-	public float[] GetViewMat() {
+	public float[] GetViewMat(Vector3f eye) {
 		Matrix.setLookAtM(mLookatMat, 0,
-				mEye.x, mEye.y, mEye.z,
+				mEye.x+eye.x, mEye.y+eye.y, mEye.z+eye.z,
 				mAt.x, mAt.y, mAt.z,
 				mUp.x, mUp.y, mUp.z);
 		return mLookatMat;
