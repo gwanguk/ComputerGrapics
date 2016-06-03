@@ -2,7 +2,7 @@ precision mediump float;
 
 uniform sampler2D s_tex0;
 uniform vec3 materialDiff, materialSpec, 		  // Md, Ms, Ma, Me
-			 materialAmbi, materialEmit; 
+			 materialAmbi, materialEmit;
 uniform float materialSh;
 uniform vec3 sourceDiff, sourceSpec, sourceAmbi;  // Sd, Ss, Sa
 
@@ -35,16 +35,16 @@ vec3 phongLight(vec3 view, vec3 normal, // view direction and normal
 }
 
 void main() {
-	vec3 materialDiff = texture2D(s_tex0, v_texCoord).xyz;
+	//vec3 materialDiff = texture2D(s_tex0, v_texCoord).xyz;
 
 	Material material =
-		Material(materialSh, 
+		Material(materialSh,
 				 materialDiff, materialSpec, materialAmbi, materialEmit);
 	Light source =
 		Light(normalize(v_lightDir), sourceDiff, sourceSpec, sourceAmbi);
 
-    vec3 color = 
+    vec3 color =
     	phongLight(normalize(v_viewDir), normalize(v_normal), material, source);
 
-	gl_FragColor = vec4(materialDiff, 1.0);
+	gl_FragColor = texture2D(s_tex0, v_texCoord);
 }

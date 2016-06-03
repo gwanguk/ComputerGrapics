@@ -33,11 +33,15 @@ public class GLViewCallback implements GLSurfaceView.Renderer{
 
     public float deltaTime;
     public TextView tvFpsText;
+    public TextView sensor;
     private double prevTime = System.currentTimeMillis();
     private final Handler mHandler = new Handler();
     private int numFrame = 0;
     private float accumTime = 0;
     private float fps;
+    public float accX=0;
+    public float accY=0;
+    public float accZ=0;
 
     public void onDrawFrame(GL10 gl) {
 
@@ -59,6 +63,7 @@ public class GLViewCallback implements GLSurfaceView.Renderer{
                 mHandler.post(new Runnable() {
                     public void run() {
                         if(tvFpsText != null) tvFpsText.setText("FPS : " + String.format("%.2f", fps));
+                        if(sensor!=null) sensor.setText(String.format("accX : %.2f, accY : %.2f, accZ : %.2f",accX, accY, accZ));
                     }
                 });
             }

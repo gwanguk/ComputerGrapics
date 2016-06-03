@@ -67,6 +67,8 @@ public class BasicRenderer {
 	}
 
 	Vector3f origin = new Vector3f(0,0,0);
+	Vector3f origin_At = new Vector3f(0,10,0);
+	Vector3f origin_Eye = new Vector3f(0.0f, 2.0f, 30.0f);
 
 	public static int V_ATTRIB_POSITION = 0;
 	public static int V_ATTRIB_NORMAL = 1;
@@ -82,11 +84,18 @@ public class BasicRenderer {
 	protected int mHeight;
 	protected double mDeltaTime;
 
+    public	int accX;
+	public	int accY;
+	public	int accZ;
+
 	public OBJECT terrian ;
 	public OBJECT target;
+	public OBJECT aim;
+	public OBJECT background;
 
 	public BasicShader mShader;
 	public BasicShader targetShader;
+	public BasicShader backgroundShader;
 
 	public BasicCamera mCamera;
 
@@ -120,9 +129,16 @@ public class BasicRenderer {
 		mCamera = new BasicCamera();
 		mShader = new BasicShader();
 		targetShader = new BasicShader();
+		backgroundShader = new BasicShader();
 
 		terrian = new OBJECT();
 		target = new OBJECT();
+		aim = new OBJECT();
+		background = new OBJECT();
+
+		accX=0;
+		accY=0;
+		accZ=0;
 	}
 
 	public BasicCamera GetCamera() {
@@ -397,11 +413,17 @@ public class BasicRenderer {
 		return farray;
 	}
 
-	Vector3f movement = new Vector3f(0.0f, 0.0f, 0.0f);
-	Vector3f target_location = new Vector3f();
-	int left =0;
+
+	Vector3f target_location = new Vector3f(30.0f, 30.0f,-30.0f);
+	Vector3f target_origin = new Vector3f(0.0f, 30.0f,-30.0f);
+	float moving_seed=0;
+	float left=1;
 	float[] GetWorldMatrix_TARTGET()
 	{
+		moving_seed+=0.01;
+		target_location.set(target_origin.x+(float) Math.sin((double) moving_seed + 180)*20,
+				target_origin.y+(float) Math.cos((double) moving_seed)*20 ,
+				target_origin.z);
 		float[] farray = new float[4*4];
 		Matrix4f out = new Matrix4f();
 
@@ -414,20 +436,12 @@ public class BasicRenderer {
 		float[] viewMat_arr = GetCamera().GetViewMat(zero);
 		viewMat.set(viewMat_arr);
 
-		if(movement.x>-30.0f) {
-			movement.add(-0.1f, 0.0f, 0.0f);
-		}
-		else if(movement.x<=-30.0f)
-		{
-			movement.add(0.1f, 0.0f, 0.0f);
-		}
-
-		target_location.set(15.0f+movement.x,15.0f, -15.0f);
-		out = (transMat.translate(15.0f+movement.x,15.0f, -15.0f).mul(rotationMat.rotate(0, 0.0f, 0.1f, 0.0f).mul(scaleMat.scale(1.0f))));
+		out = (transMat.translate(target_location.x,target_location.y, target_location.z).mul(rotationMat.rotate(0, 0.0f, 0.1f, 0.0f).mul(scaleMat.scale(1.0f))));
 		out.get(farray);
 
 		return farray;
 	}
+
 
 	float[] GetWorldMatrix_TERRIAN()
 	{
@@ -443,28 +457,86 @@ public class BasicRenderer {
 		float[] viewMat_arr = GetCamera().GetViewMat(zero);
 		viewMat.set(viewMat_arr);
 
-		out = (transMat.translate(0.0f, 0.0f, 0.0f).mul(rotationMat.rotate(0, 0.0f, 0.1f, 0.0f).mul(scaleMat.scale(1.0f))));
+		out = (transMat.translate(0.0f, 0.0f, 0.0f).mul(rotationMat.rotate(0, 0.0f, 0.1f, 0.0f).mul(scaleMat.scale(50.0f))));
 		out.get(farray);
 
 		return farray;
 	}
 
-	float dx=0.0f, dy=0.0f, dz=0.0f ;
+	float[] GetWorldMatrix_BACKGROUND() //3
+	{
+		float[] farray = new float[4*4];
+		Matrix4f out = new Matrix4f();
+
+		Matrix4f scaleMat =new Matrix4f();
+		Matrix4f transMat = new Matrix4f();
+		Matrix4f rotationMat = new Matrix4f();
+		Matrix4f viewMat= new Matrix4f();
+
+		Vector3f zero = new Vector3f(0,0,0);
+		float[] viewMat_arr = GetCamera().GetViewMat(zero);
+		viewMat.set(viewMat_arr);
+
+		out = (transMat.translate(0.0f, 20.0f, 0.0f).mul(rotationMat.rotate(0, 0.0f, .0f, 0.0f).mul(scaleMat.scale(50.0f))));
+		out.get(farray);
+
+		return farray;
+	}
+
+	Vector3f aim_location = new Vector3f();
+	int set = 1;
+	float aim_lastY=0, aim_lastZ=0;
+	float aim_dy=0, aim_dz=0;
+	float[] GetWorldMatrix_AIM()
+	{
+		float left, up;
+		if(set==1)
+		{
+			aim_lastY = accY;
+			aim_lastZ=accZ;
+			set=0;
+		}
+		aim_dy = accY-aim_lastY;
+		aim_dz =accZ-aim_lastZ;
+
+		aim_location.x -=aim_dy/30.0f;
+		aim_location.y -=aim_dz/30.0f;
+
+		float[] farray = new float[4*4];
+		Matrix4f out = new Matrix4f();
+
+		Matrix4f scaleMat =new Matrix4f();
+		Matrix4f transMat = new Matrix4f();
+		Matrix4f rotationMat = new Matrix4f();
+		Matrix4f viewMat= new Matrix4f();
+
+		Vector3f zero = new Vector3f(0,0,0);
+		float[] viewMat_arr = GetCamera().GetViewMat(zero);
+		viewMat.set(viewMat_arr);
+
+		out = (transMat.translate(aim_location.x, aim_location.y,aim_location.z).mul(rotationMat.rotation(90, 1.0f, 0.0f, 0.0f).mul(scaleMat.scale(1.0f))));
+		out.get(farray);
+
+		return farray;
+	}
+
+	Vector3f diff_aiming = new Vector3f();
+	float magnifiying_scale =25;
 	float[] GetViewMatrix()
 	{
-
 		if (mIsTouchOn) {
-			dz-=0.2f;
-			GetCamera().setAT(target_location);
+			GetCamera().setAT(aim_location);
+			diff_aiming.set(aim_location.x-origin_Eye.x,aim_location.y-origin_Eye.y,aim_location.z-origin_Eye.z);
+			diff_aiming.set(diff_aiming.x / diff_aiming.length()*magnifiying_scale,
+					diff_aiming.y / diff_aiming.length()*magnifiying_scale,
+					diff_aiming.z / diff_aiming.length()*magnifiying_scale);
 		}
 		else {
-			dz = 0.0f;
-			GetCamera().setAT(origin);
+			diff_aiming.set(0,0,0);
+			GetCamera().setAT(origin_At);
 		}
-		Vector3f transEYE = new Vector3f(dx, dy, dz);
 
-
-		float[] viewMat = GetCamera().GetViewMat(transEYE);
+		float[] viewMat = GetCamera().GetViewMat(diff_aiming);
 
 		return viewMat;
 	}
@@ -489,8 +561,12 @@ public class BasicRenderer {
 			worldMat = GetWorldMatrix_TERRIAN();
 		else if(type==1)
 			worldMat = GetWorldMatrix_TARTGET();
+		else if(type==2)
+			worldMat = GetWorldMatrix_AIM();
+		else if(type==3)
+			worldMat = GetWorldMatrix_BACKGROUND();
 		else
-			worldMat = GetWorldMatrix_TARTGET();
+			worldMat = GetWorldMatrix();
 
 		float[] viewMat = GetViewMatrix();
 		float[] projMat = mCamera.GetPerspectiveMat();
@@ -514,17 +590,34 @@ public class BasicRenderer {
 	}
 
 	void Draw() {
-
-
 		CreateVbo(target);
-		PassUniform(targetShader, 0);
-		targetShader.Use();
+		mShader.Use();
+		PassUniform(mShader, 1);
 		GLES20.glDrawElements(GLES20.GL_TRIANGLES, target.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
 
 		CreateVbo(terrian);
-		PassUniform(mShader, 1);
 		mShader.Use();
+		PassUniform(mShader, 0);
 		GLES20.glDrawElements(GLES20.GL_TRIANGLES, terrian.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
+
+		CreateVbo(aim);
+		targetShader.Use();
+		PassUniform(targetShader, 2);
+		if(!mIsTouchOn) {
+			GLES20.glDisable(GLES20.GL_CULL_FACE);
+			GLES20.glDrawElements(GLES20.GL_TRIANGLES, aim.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
+			GLES20.glEnable(GLES20.GL_CULL_FACE);
+
+		}
+
+
+		CreateVbo(background);
+		GLES20.glFrontFace(GLES20.GL_CW);
+		mShader.Use();
+		PassUniform(mShader, 3);
+		GLES20.glDrawElements(GLES20.GL_TRIANGLES, background.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
+		GLES20.glFrontFace(GLES20.GL_CCW);
+
 
 		BasicUtils.CheckGLerror("glDrawElements");
 	}
