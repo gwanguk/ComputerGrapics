@@ -34,16 +34,20 @@ public class FragLightingView extends SampleView  {
 		mRenderer.SetProgram(vs, fs, mRenderer.targetShader);
 
 
-		InputStream terrian = FileLoader.GetStream(this, "obj3d/rectangle");
-		InputStream target = FileLoader.GetStream(this, "obj3d/bird.obj");
+
+		InputStream terrian = FileLoader.GetStream(this, "obj3d/mountain.obj");
+		InputStream target = FileLoader.GetStream(this, "obj3d/airplane.obj");
 		InputStream background = FileLoader.GetStream(this, "obj3d/cube.obj");
 		InputStream aim = FileLoader.GetStream(this, "obj3d/rectangle");
+		InputStream zoom = FileLoader.GetStream(this, "obj3d/rectangle");
+		InputStream bullet = FileLoader.GetStream(this, "obj3d/bullet.obj");
+
 
 		TexData[] text_terrian = new TexData[1]; //지형
-		text_terrian[0] =  FileLoader.ReadTexture(this, R.drawable.mountain);
+		text_terrian[0] =  FileLoader.ReadTexture(this, R.drawable.mountaincolor2);
 
 		TexData[] text_target = new TexData[1]; //타겟
-		text_target[0] =  FileLoader.ReadTexture(this, R.drawable.tex_c_brick);
+		text_target[0] =  FileLoader.ReadTexture(this, R.drawable.airplane);
 
 		TexData[] text_background = new TexData[1]; //배경
 		text_background[0] =  FileLoader.ReadTexture(this, R.drawable.background);
@@ -51,20 +55,30 @@ public class FragLightingView extends SampleView  {
 		TexData[] text_aim = new TexData[1]; //배경
 		text_aim[0] =  FileLoader.ReadTexture(this, R.drawable.aim);
 
+		TexData[] text_zoom = new TexData[1]; //zoom
+		text_zoom[0] =  FileLoader.ReadTexture(this, R.drawable.zoom);
+
+		TexData[] text_bullet = new TexData[1]; //zoom
+		text_bullet[0] =  FileLoader.ReadTexture(this, R.drawable.tex_c_brick);
+
 		mRenderer.SetNewModel(terrian, mRenderer.terrian);
 		mRenderer.SetNewModel(background, mRenderer.background);
 		mRenderer.SetNewModel(aim, mRenderer.aim);
 		mRenderer.SetNewModel(target, mRenderer.target);
+		mRenderer.SetNewModel(zoom, mRenderer.zoom);
+		mRenderer.SetNewModel(bullet, mRenderer.bullet);
 
 		mRenderer.SetTexture(TexData.Type.TEXDATA_GENERAL, text_terrian, mRenderer.terrian);
 		mRenderer.SetTexture(TexData.Type.TEXDATA_GENERAL,text_target, mRenderer.target);
 		mRenderer.SetTexture(TexData.Type.TEXDATA_GENERAL,text_aim, mRenderer.aim);
 		mRenderer.SetTexture(TexData.Type.TEXDATA_GENERAL,text_background, mRenderer.background);
+		mRenderer.SetTexture(TexData.Type.TEXDATA_GENERAL,text_zoom, mRenderer.zoom);
+		mRenderer.SetTexture(TexData.Type.TEXDATA_GENERAL,text_bullet, mRenderer.bullet);
 
 		mRenderer.Initialize();
 
 		//mViewRenderer->OffAutoRotate();
-		mRenderer.GetCamera().SetEye(0.0f, 5.0f, 30.0f);
+		mRenderer.GetCamera().SetEye(0.0f, 10.0f, 30.0f);
 		mRenderer.GetCamera().SetAt(0, 0, 0);
 	}
 

@@ -4,6 +4,7 @@ package com.medialab.android_gles_sample.renderer;
 import android.graphics.Shader;
 import android.opengl.GLES20;
 import android.opengl.GLES30;
+import android.service.carrier.CarrierMessagingService;
 import android.util.Log;
 
 import com.medialab.android_gles_sample.joml.AxisAngle4f;
@@ -45,6 +46,8 @@ public class BasicRenderer {
 		int mIndexSize;
 		int mTangentSize;
 
+		int faceComponentNum;
+
 		// vertex buffer object and index buffer object
 		int[] mVboVertices = {0};
 		int[] mVboIndices = {0};
@@ -61,6 +64,7 @@ public class BasicRenderer {
 		public OBJECT()		{
 			mHasTexture = false;
 			mHasNorMap = false;
+			faceComponentNum =3;
 
 			mIndexSize = 0;
 		}
@@ -84,7 +88,7 @@ public class BasicRenderer {
 	protected int mHeight;
 	protected double mDeltaTime;
 
-    public	int accX;
+	public	int accX;
 	public	int accY;
 	public	int accZ;
 
@@ -92,6 +96,8 @@ public class BasicRenderer {
 	public OBJECT target;
 	public OBJECT aim;
 	public OBJECT background;
+	public OBJECT zoom;
+	public OBJECT bullet;
 
 	public BasicShader mShader;
 	public BasicShader targetShader;
@@ -109,6 +115,15 @@ public class BasicRenderer {
 	static Quaternionf lastRotQuat;
 	static Vector2f ancPts;
 	static boolean isUpdateAnc;
+
+	float bullet_speed = 4;
+	float target_speed = 1;
+	float slow_speed = 1;
+
+	int ready=0;
+	int fired=0;
+
+	int hit=0;
 
 	// vertex buffer
 
@@ -135,6 +150,8 @@ public class BasicRenderer {
 		target = new OBJECT();
 		aim = new OBJECT();
 		background = new OBJECT();
+		zoom = new OBJECT();
+		bullet = new OBJECT();
 
 		accX=0;
 		accY=0;
@@ -196,11 +213,6 @@ public class BasicRenderer {
 		LogInfo();
 
 		CountTickInit();
-
-		CreateVbo(terrian);
-		CreateVbo(target);
-
-
 		SetState();
 
 		return true;
@@ -308,13 +320,17 @@ public class BasicRenderer {
 				GLES20.GL_STATIC_DRAW);
 
 		int stride = 4 * (3	+ 3 + 2); // stride: sizeof(float) * number of components
+		if(obj.faceComponentNum==2) // if facecomponent is 2
+			stride = 4 * (3 + 2);
 		int offset = 0;
 		GLES20.glEnableVertexAttribArray(V_ATTRIB_POSITION);
 		GLES20.glVertexAttribPointer(V_ATTRIB_POSITION, 3, GLES20.GL_FLOAT, false, stride, offset);
 
-		offset += 4 * 3;
-		GLES20.glEnableVertexAttribArray(V_ATTRIB_NORMAL);
-		GLES20.glVertexAttribPointer(V_ATTRIB_NORMAL, 3, GLES20.GL_FLOAT, false, stride, offset);
+		if(obj.faceComponentNum==3) {
+			offset += 4 * 3;
+			GLES20.glEnableVertexAttribArray(V_ATTRIB_NORMAL);
+			GLES20.glVertexAttribPointer(V_ATTRIB_NORMAL, 3, GLES20.GL_FLOAT, false, stride, offset);
+		}
 
 		// If renderer has texture, we should enable vertex attribute for texCoord
 		if (obj.mHasTexture || obj.mHasNorMap) {
@@ -350,8 +366,8 @@ public class BasicRenderer {
 		float radius = 1.0f;
 
 		Vector3f P = new Vector3f(1.0f * point.x / mWidth * 2 - 1.0f,
-						1.0f * point.y / mHeight * 2 - 1.0f,
-						0);
+				1.0f * point.y / mHeight * 2 - 1.0f,
+				0);
 		P.y = -P.y;
 
 		float OP_squared = P.x * P.x + P.y * P.y;
@@ -414,13 +430,14 @@ public class BasicRenderer {
 	}
 
 
-	Vector3f target_location = new Vector3f(30.0f, 30.0f,-30.0f);
-	Vector3f target_origin = new Vector3f(0.0f, 30.0f,-30.0f);
+	Vector3f target_location = new Vector3f();
+	Vector3f target_origin = new Vector3f(0.0f, 30.0f,-40.0f);
+	float hit_effect =0;
 	float moving_seed=0;
 	float left=1;
 	float[] GetWorldMatrix_TARTGET()
 	{
-		moving_seed+=0.01;
+		moving_seed+=0.01*target_speed*slow_speed;
 		target_location.set(target_origin.x+(float) Math.sin((double) moving_seed + 180)*20,
 				target_origin.y+(float) Math.cos((double) moving_seed)*20 ,
 				target_origin.z);
@@ -432,11 +449,25 @@ public class BasicRenderer {
 		Matrix4f rotationMat = new Matrix4f();
 		Matrix4f viewMat= new Matrix4f();
 
+		rotationMat.rotate(90, 0.0f,1.0f,0.0f);
+
+		if(hit==1&&hit_effect<20)
+		{
+			scaleMat.scale(hit_effect/10);
+			hit_effect= hit_effect+1;
+		}
+		else if(hit==1&&hit_effect>=20)
+		{
+			hit=0;
+			hit_effect=0;
+		}
+
+
 		Vector3f zero = new Vector3f(0,0,0);
 		float[] viewMat_arr = GetCamera().GetViewMat(zero);
 		viewMat.set(viewMat_arr);
 
-		out = (transMat.translate(target_location.x,target_location.y, target_location.z).mul(rotationMat.rotate(0, 0.0f, 0.1f, 0.0f).mul(scaleMat.scale(1.0f))));
+		out = (transMat.translation(target_location.x, target_location.y, target_location.z).mul(rotationMat.mul(scaleMat.scale(0.01f))));
 		out.get(farray);
 
 		return farray;
@@ -453,11 +484,50 @@ public class BasicRenderer {
 		Matrix4f rotationMat = new Matrix4f();
 		Matrix4f viewMat= new Matrix4f();
 
+		transMat.translate(0.0f, -15.0f, 0.0f);
+		scaleMat.scale(1.0f * 0.000003f, 0.8f*0.000003f, 1.0f*0.000003f);
+
+		out = (transMat.mul(rotationMat).mul(scaleMat));
+		out.get(farray);
+
+		return farray;
+	}
+
+	Vector3f ZOOM_location = new Vector3f();
+	Vector3f Fake_EYE = new Vector3f();
+	float scope_magnifiying_scale =3;
+	float[] GetWorldMatrix_ZOOM()
+	{
+		float[] farray = new float[4*4];
+		Matrix4f out = new Matrix4f();
+
+		ZOOM_location.set(Fake_EYE.x+aim_unit.x*scope_magnifiying_scale,Fake_EYE.y+aim_unit.y*scope_magnifiying_scale,
+				Fake_EYE.z+aim_unit.z*scope_magnifiying_scale);
+
+		Vector3f va = new Vector3f(0.0f, 0.0f, -1.0f);
+		Vector3f vb = new Vector3f();
+		vb.set(aim_unit);
+
+		// Get the rotation axis and the angle between the vector
+		float angle = (float)Math.acos(va.dot(vb));
+
+		Vector3f axis = va.cross(vb).normalize();
+
+		Matrix4f scaleMat =new Matrix4f();
+		Matrix4f transMat = new Matrix4f();
+		Matrix4f rotationMat = new Matrix4f();
+		Matrix4f viewMat= new Matrix4f();
+
+		scaleMat.scale(10.0f);
+		rotationMat.rotation(90, 1.0f, 0.0f, 0.0f);
+		rotationMat.rotate(angle,axis);
+		transMat.translation(ZOOM_location);
+
 		Vector3f zero = new Vector3f(0,0,0);
 		float[] viewMat_arr = GetCamera().GetViewMat(zero);
 		viewMat.set(viewMat_arr);
 
-		out = (transMat.translate(0.0f, 0.0f, 0.0f).mul(rotationMat.rotate(0, 0.0f, 0.1f, 0.0f).mul(scaleMat.scale(50.0f))));
+		out = (transMat.mul(rotationMat.mul(scaleMat)));
 		out.get(farray);
 
 		return farray;
@@ -477,16 +547,63 @@ public class BasicRenderer {
 		float[] viewMat_arr = GetCamera().GetViewMat(zero);
 		viewMat.set(viewMat_arr);
 
-		out = (transMat.translate(0.0f, 20.0f, 0.0f).mul(rotationMat.rotate(0, 0.0f, .0f, 0.0f).mul(scaleMat.scale(50.0f))));
+		out = (transMat.translation(0.0f, 49.0f, 0.0f).mul(rotationMat.rotate(0, 0.0f, 0.0f, 0.0f).mul(scaleMat.scale(70.0f))));
 		out.get(farray);
 
 		return farray;
 	}
 
-	Vector3f aim_location = new Vector3f();
+	Vector3f bullet_pos = new Vector3f();
+	Matrix4f bullet_lotation = new Matrix4f();
+	Vector3f bullet_offset = new Vector3f();
+	float[] GetWorldMatrix_BULLET() //5
+	{
+		float[] farray = new float[4*4];
+		Matrix4f out = new Matrix4f();
+		Vector3f EYE_pos = new Vector3f(mCamera.mEye.x,mCamera.mEye.y,mCamera.mEye.z);
+		float between_target_distance;
+		between_target_distance= target_location.distance(bullet_pos);
+
+		if(fired==0)
+		{
+			bullet_pos.set(EYE_pos);
+		}
+		else if(fired==1)
+		{
+			bullet_offset.set(aim_unit.x * bullet_speed*slow_speed,aim_unit.y*bullet_speed*slow_speed, aim_unit.z*bullet_speed*slow_speed);
+			bullet_pos.add(bullet_offset);
+			if(bullet_pos.z<-50) {
+				fired = 0;
+				hit=0;
+				slow_speed=1;
+			}
+			if(between_target_distance<5) {
+				fired = 0;
+				hit =1 ;
+				slow_speed=1;
+			}
+		}
+
+		Matrix4f scaleMat =new Matrix4f();
+		Matrix4f transMat = new Matrix4f();
+		scaleMat.scale(1.0f);
+		transMat.translation(bullet_pos);
+		bullet_lotation.rotate(1,aim_unit);
+		Matrix4f viewMat= new Matrix4f();
+
+		out = (transMat.mul(bullet_lotation.mul(scaleMat)));
+		out.get(farray);
+
+		return farray;
+	}
+
+	Vector3f proj_aim_location = new Vector3f(0.0f, 10.0f,-50.0f);
+	Vector3f last_proj_aim_location =new Vector3f();
+	Vector3f aim_location = new Vector3f(0.0f, 10.0f,-50.0f);
+	Vector3f aim_unit = new Vector3f();
 	int set = 1;
-	float aim_lastY=0, aim_lastZ=0;
-	float aim_dy=0, aim_dz=0;
+	float aim_lastY=0, aim_lastZ=0, aim_lastX=0;
+	float aim_dy=0, aim_dz=0, aim_dx=0;
 	float[] GetWorldMatrix_AIM()
 	{
 		float left, up;
@@ -494,13 +611,50 @@ public class BasicRenderer {
 		{
 			aim_lastY = accY;
 			aim_lastZ=accZ;
+			aim_lastX = accX;
 			set=0;
 		}
 		aim_dy = accY-aim_lastY;
 		aim_dz =accZ-aim_lastZ;
+		aim_dx = accX-aim_lastX;
+		//aim_lastY =accY;
+		//aim_lastZ=accZ;
 
-		aim_location.x -=aim_dy/30.0f;
-		aim_location.y -=aim_dz/30.0f;
+		if(fired==0) {
+			proj_aim_location.x += (aim_dy) / 5;
+			proj_aim_location.y += aim_dz / 5;
+
+			if (proj_aim_location.x < -50.0f)
+				proj_aim_location.x = -50.0f;
+			if (proj_aim_location.x > 50.0f)
+				proj_aim_location.x = 50.0f;
+			if (proj_aim_location.y < 0.0f)
+				proj_aim_location.y = 0.0f;
+			if (proj_aim_location.y > 100.0f)
+				proj_aim_location.y = 100.0f;
+			last_proj_aim_location.set(proj_aim_location);
+		}
+
+
+
+
+		Vector3f EYE_position = new Vector3f(GetCamera().GetEye().x,GetCamera().GetEye().y, GetCamera().GetEye().z);
+
+		Vector3f va = new Vector3f(0.0f, 0.0f, -1.0f);
+		Vector3f vb = aim_unit;
+
+		// Get the rotation axis and the angle between the vector
+		float angle = (float)Math.acos(Math.min(1.0f, va.dot(vb)));
+
+		Vector3f axis = va.cross(vb).normalize();
+
+		aim_unit.set(proj_aim_location.x - EYE_position.x,
+				proj_aim_location.y - EYE_position.y,
+				proj_aim_location.z - EYE_position.z);
+		aim_unit.normalize();
+		aim_location.set(aim_unit.x * 5 + EYE_position.x, aim_unit.y*5+EYE_position.y,aim_unit.z*5+EYE_position.z);
+
+		//aim_location.set(aim_unit.mul(10.0f).add(EYE_position));
 
 		float[] farray = new float[4*4];
 		Matrix4f out = new Matrix4f();
@@ -508,35 +662,43 @@ public class BasicRenderer {
 		Matrix4f scaleMat =new Matrix4f();
 		Matrix4f transMat = new Matrix4f();
 		Matrix4f rotationMat = new Matrix4f();
-		Matrix4f viewMat= new Matrix4f();
 
-		Vector3f zero = new Vector3f(0,0,0);
-		float[] viewMat_arr = GetCamera().GetViewMat(zero);
-		viewMat.set(viewMat_arr);
+		transMat.translation(aim_location.x, aim_location.y, aim_location.z);
+		scaleMat.scale(0.3f);
+		rotationMat.rotate(90, 1.0f, 0.0f, 0.0f);
+		rotationMat.rotate(angle,axis);
 
-		out = (transMat.translate(aim_location.x, aim_location.y,aim_location.z).mul(rotationMat.rotation(90, 1.0f, 0.0f, 0.0f).mul(scaleMat.scale(1.0f))));
+		out = (transMat.mul(rotationMat.mul(scaleMat)));
 		out.get(farray);
 
 		return farray;
 	}
 
-	Vector3f diff_aiming = new Vector3f();
-	float magnifiying_scale =25;
+	float magnifiying_scale =50;
 	float[] GetViewMatrix()
 	{
+		float[] viewMat;
 		if (mIsTouchOn) {
-			GetCamera().setAT(aim_location);
-			diff_aiming.set(aim_location.x-origin_Eye.x,aim_location.y-origin_Eye.y,aim_location.z-origin_Eye.z);
-			diff_aiming.set(diff_aiming.x / diff_aiming.length()*magnifiying_scale,
-					diff_aiming.y / diff_aiming.length()*magnifiying_scale,
-					diff_aiming.z / diff_aiming.length()*magnifiying_scale);
+			GetCamera().setAT(proj_aim_location);
+			Vector3f zoomed_vec = new Vector3f(aim_unit.x*magnifiying_scale,
+					aim_unit.y*magnifiying_scale,
+					aim_unit.z*magnifiying_scale);
+			viewMat=GetCamera().GetViewMat(zoomed_vec);
+			Fake_EYE.set(mCamera.mEye.x+zoomed_vec.x,mCamera.mEye.y+zoomed_vec.y,mCamera.mEye.z+zoomed_vec.z);
 		}
-		else {
-			diff_aiming.set(0,0,0);
+		else  {
 			GetCamera().setAT(origin_At);
+			viewMat = GetCamera().GetViewMat(origin);
+			Fake_EYE.set(mCamera.mEye.x, mCamera.mEye.y, mCamera.mEye.z);
 		}
 
-		float[] viewMat = GetCamera().GetViewMat(diff_aiming);
+		if(fired==1)
+		{
+			GetCamera().setAT(last_proj_aim_location);
+			Fake_EYE.set(bullet_pos.x-aim_unit.x,bullet_pos.y-aim_unit.y,bullet_pos.z-aim_unit.z);
+			viewMat = GetCamera().GetViewMat(Fake_EYE);
+		}
+
 
 		return viewMat;
 	}
@@ -565,6 +727,10 @@ public class BasicRenderer {
 			worldMat = GetWorldMatrix_AIM();
 		else if(type==3)
 			worldMat = GetWorldMatrix_BACKGROUND();
+		else if(type==4)
+			worldMat = GetWorldMatrix_ZOOM();
+		else if(type==5)
+			worldMat = GetWorldMatrix_BULLET();
 		else
 			worldMat = GetWorldMatrix();
 
@@ -589,7 +755,15 @@ public class BasicRenderer {
 		shader.SetUniform("sourceAmbi", 0.0f, 0.0f, 0.0f);
 	}
 
+
 	void Draw() {
+		CreateVbo(background);
+		GLES20.glFrontFace(GLES20.GL_CW);
+		mShader.Use();
+		PassUniform(mShader, 3);
+		GLES20.glDrawElements(GLES20.GL_TRIANGLES, background.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
+		GLES20.glFrontFace(GLES20.GL_CCW);
+
 		CreateVbo(target);
 		mShader.Use();
 		PassUniform(mShader, 1);
@@ -598,28 +772,58 @@ public class BasicRenderer {
 		CreateVbo(terrian);
 		mShader.Use();
 		PassUniform(mShader, 0);
+		GLES20.glEnable(GLES20.GL_BLEND);
+		GLES20.glBlendFunc(GLES20.GL_ONE, GLES20.GL_ZERO);
 		GLES20.glDrawElements(GLES20.GL_TRIANGLES, terrian.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
+		GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
+
+		targetShader.Use();
+		PassUniform(targetShader, 5);
+		if(fired==1) {
+			CreateVbo(bullet);
+			GLES20.glDrawElements(GLES20.GL_TRIANGLE_STRIP, bullet.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
+		}
 
 		CreateVbo(aim);
 		targetShader.Use();
 		PassUniform(targetShader, 2);
-		if(!mIsTouchOn) {
-			GLES20.glDisable(GLES20.GL_CULL_FACE);
+		if(!mIsTouchOn&&fired!=1)
 			GLES20.glDrawElements(GLES20.GL_TRIANGLES, aim.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
-			GLES20.glEnable(GLES20.GL_CULL_FACE);
 
+		CreateVbo(zoom);
+		targetShader.Use();
+		PassUniform(targetShader, 4);
+		if(mIsTouchOn) {
+			ready=1;
+			GLES20.glDrawElements(GLES20.GL_TRIANGLES, zoom.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
 		}
+		else if(ready==1)
+		{
+			fired=1;
+			slow_speed=0.1f;
+			ready=0;
+		}
+		GLES20.glDisable(GLES20.GL_BLEND);
 
-
-		CreateVbo(background);
-		GLES20.glFrontFace(GLES20.GL_CW);
-		mShader.Use();
-		PassUniform(mShader, 3);
-		GLES20.glDrawElements(GLES20.GL_TRIANGLES, background.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
-		GLES20.glFrontFace(GLES20.GL_CCW);
-
+		Bufferclear();
 
 		BasicUtils.CheckGLerror("glDrawElements");
+	}
+
+	void Bufferclear ()
+	{
+		GLES20.glDeleteBuffers(1, background.mVboVertices, 0);
+		GLES20.glDeleteBuffers(1, background.mVboIndices, 0);
+		GLES20.glDeleteBuffers(1, target.mVboVertices, 0);
+		GLES20.glDeleteBuffers(1, target.mVboIndices,0);
+		GLES20.glDeleteBuffers(1, terrian.mVboVertices, 0);
+		GLES20.glDeleteBuffers(1, terrian.mVboIndices,0);
+		GLES20.glDeleteBuffers(1, bullet.mVboVertices, 0);
+		GLES20.glDeleteBuffers(1, bullet.mVboIndices,0);
+		GLES20.glDeleteBuffers(1, aim.mVboVertices, 0);
+		GLES20.glDeleteBuffers(1, aim.mVboIndices,0);
+		GLES20.glDeleteBuffers(1, zoom.mVboVertices, 0);
+		GLES20.glDeleteBuffers(1, zoom.mVboIndices,0);
 	}
 
 
@@ -777,13 +981,16 @@ public class BasicRenderer {
 									elem.put(element, (short) elem.size());
 									String listIndex[];
 									listIndex = element.split("/");
+									object.faceComponentNum=listIndex.length;
 									for (int i = 0; i < posNumComponents; ++i) {
 										int k = Integer.parseInt(listIndex[0]) - 1;
 										vertex.add(pos.get(k * posNumComponents + i));
 									}
-									for (int i = 0; i < norNumComponents; ++i) {
-										int k = Integer.parseInt(listIndex[2]) - 1;
-										vertex.add(normal.get(k * norNumComponents + i));
+									if(listIndex.length==3) {
+										for (int i = 0; i < norNumComponents; ++i) {
+											int k = Integer.parseInt(listIndex[2]) - 1;
+											vertex.add(normal.get(k * norNumComponents + i));
+										}
 									}
 									for (int i = 0; i < texNumComponents - 1; ++i) {
 										int k = Integer.parseInt(listIndex[1]) - 1;

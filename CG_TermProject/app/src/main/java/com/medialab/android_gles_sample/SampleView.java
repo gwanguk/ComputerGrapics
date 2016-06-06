@@ -24,8 +24,7 @@ public abstract class SampleView extends Activity implements SensorEventListener
     int accY;
     int accZ;
     private SensorManager mSensorManager;
-    private SensorEventListener gyroListener;
-    private Sensor accSensor;
+    private Sensor magSensor;
 
 
     @Override
@@ -49,7 +48,7 @@ public abstract class SampleView extends Activity implements SensorEventListener
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
 
         //자이로스코프 센서(회전)
-        accSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+        magSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
 
     }
 
@@ -60,7 +59,7 @@ public abstract class SampleView extends Activity implements SensorEventListener
     public void onSensorChanged(SensorEvent event) {
         Sensor sensor = event.sensor;
 
-        if (sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
+        if (sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
             accX= (int)(event.values[0] );
             accY= (int)(event.values[1] );
             accZ= (int)(event.values[2] );
@@ -85,7 +84,7 @@ public abstract class SampleView extends Activity implements SensorEventListener
     protected void onResume() {
         mGLView.onResume();
         super.onResume();
-        mSensorManager.registerListener(this, accSensor,SensorManager.SENSOR_DELAY_FASTEST);
+        mSensorManager.registerListener(this, magSensor,SensorManager.SENSOR_DELAY_FASTEST);
     }
     public void addUi() {
         View btnLayout = getLayoutInflater().inflate(R.layout.sample_ui, null);

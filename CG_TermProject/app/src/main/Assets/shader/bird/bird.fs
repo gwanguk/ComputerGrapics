@@ -35,7 +35,7 @@ vec3 phongLight(vec3 view, vec3 normal, // view direction and normal
 }
 
 void main() {
-	//vec3 materialDiff = texture2D(s_tex0, v_texCoord).xyz;
+	vec3 materialDiff = texture2D(s_tex0, v_texCoord).xyz;
 
 	Material material =
 		Material(materialSh,
@@ -46,5 +46,5 @@ void main() {
     vec3 color =
     	phongLight(normalize(v_viewDir), normalize(v_normal), material, source);
 
-	gl_FragColor = texture2D(s_tex0, v_texCoord);
+	gl_FragColor =texture2D(s_tex0, v_texCoord);
 }
