@@ -32,14 +32,16 @@ public class FragLightingView extends SampleView  {
 		vs = FileLoader.ReadTxtFile(this, "shader/bird/bird.vs");
 		fs = FileLoader.ReadTxtFile(this, "shader/bird/bird.fs");
 		mRenderer.SetProgram(vs, fs, mRenderer.targetShader);
-
+		vs = FileLoader.ReadTxtFile(this, "shader/noop.vs");
+		fs = FileLoader.ReadTxtFile(this, "shader/bird/bird.fs");
+		mRenderer.SetProgram(vs, fs, mRenderer.zoomShader);
 
 
 		InputStream terrian = FileLoader.GetStream(this, "obj3d/mountain.obj");
 		InputStream target = FileLoader.GetStream(this, "obj3d/airplane.obj");
 		InputStream background = FileLoader.GetStream(this, "obj3d/cube.obj");
 		InputStream aim = FileLoader.GetStream(this, "obj3d/rectangle");
-		InputStream zoom = FileLoader.GetStream(this, "obj3d/rectangle");
+		InputStream zoom = FileLoader.GetStream(this, "obj3d/zoom.obj");
 		InputStream bullet = FileLoader.GetStream(this, "obj3d/bullet.obj");
 
 

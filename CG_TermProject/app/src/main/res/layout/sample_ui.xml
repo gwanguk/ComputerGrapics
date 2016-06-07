@@ -15,4 +15,7 @@
         android:text="New Text"
         android:id="@+id/sensor"
         android:textColor="#7bc7d1" />
+
+
+
 </LinearLayout>

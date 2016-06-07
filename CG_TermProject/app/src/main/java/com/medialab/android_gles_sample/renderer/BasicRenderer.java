@@ -102,6 +102,7 @@ public class BasicRenderer {
 	public BasicShader mShader;
 	public BasicShader targetShader;
 	public BasicShader backgroundShader;
+	public BasicShader zoomShader;
 
 	public BasicCamera mCamera;
 
@@ -145,6 +146,7 @@ public class BasicRenderer {
 		mShader = new BasicShader();
 		targetShader = new BasicShader();
 		backgroundShader = new BasicShader();
+		zoomShader = new BasicShader();
 
 		terrian = new OBJECT();
 		target = new OBJECT();
@@ -791,8 +793,8 @@ public class BasicRenderer {
 			GLES20.glDrawElements(GLES20.GL_TRIANGLES, aim.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
 
 		CreateVbo(zoom);
-		targetShader.Use();
-		PassUniform(targetShader, 4);
+		zoomShader.Use();
+		PassUniform(zoomShader, 4);
 		if(mIsTouchOn) {
 			ready=1;
 			GLES20.glDrawElements(GLES20.GL_TRIANGLES, zoom.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);

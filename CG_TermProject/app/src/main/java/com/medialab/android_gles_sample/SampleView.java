@@ -13,6 +13,7 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.widget.ImageView;
 
 import com.medialab.android_gles_sample.renderer.BasicRenderer;
 
@@ -34,13 +35,9 @@ public abstract class SampleView extends Activity implements SensorEventListener
         mGLView = new GLView(this);
         mGLViewCallback = new GLViewCallback(this);
         mRenderer = new BasicRenderer();
-
-
         mGLView.setRenderer(mGLViewCallback);
         setContentView(mGLView);
         addUi();
-
-
 
         super.onCreate(savedInstanceState);
 
@@ -93,6 +90,7 @@ public abstract class SampleView extends Activity implements SensorEventListener
 
         mGLViewCallback.tvFpsText  = (TextView) findViewById(R.id.tvFps);
         mGLViewCallback.sensor = (TextView) findViewById(R.id.sensor);
+
     }
 
     @Override
