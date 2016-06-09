@@ -46,13 +46,13 @@ public class FragLightingView extends SampleView  {
 
 
 		TexData[] text_terrian = new TexData[1]; //지형
-		text_terrian[0] =  FileLoader.ReadTexture(this, R.drawable.mountaincolor2);
+		text_terrian[0] =  FileLoader.ReadTexture(this, R.drawable.dark_mountain);
 
 		TexData[] text_target = new TexData[1]; //타겟
 		text_target[0] =  FileLoader.ReadTexture(this, R.drawable.airplane);
 
 		TexData[] text_background = new TexData[1]; //배경
-		text_background[0] =  FileLoader.ReadTexture(this, R.drawable.background);
+		text_background[0] =  FileLoader.ReadTexture(this, R.drawable.background2);
 
 		TexData[] text_aim = new TexData[1]; //배경
 		text_aim[0] =  FileLoader.ReadTexture(this, R.drawable.aim);

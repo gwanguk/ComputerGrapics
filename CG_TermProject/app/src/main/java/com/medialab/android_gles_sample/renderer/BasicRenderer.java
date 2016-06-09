@@ -1003,7 +1003,7 @@ public class BasicRenderer {
 							break;
 
 						case "g":
-							name = st.nextToken();
+							//name = st.nextToken();
 							break;
 
 						default:
