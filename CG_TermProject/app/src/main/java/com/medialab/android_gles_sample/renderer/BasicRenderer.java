@@ -556,7 +556,8 @@ public class BasicRenderer {
 	}
 
 	Vector3f bullet_pos = new Vector3f();
-	Matrix4f bullet_lotation = new Matrix4f();
+	float bullet_rotation_angle =0;
+	float bullet_scale =1;
 	Vector3f bullet_offset = new Vector3f();
 	float[] GetWorldMatrix_BULLET() //5
 	{
@@ -578,22 +579,37 @@ public class BasicRenderer {
 				fired = 0;
 				hit=0;
 				slow_speed=1;
+				bullet_scale=1;
 			}
-			if(between_target_distance<5) {
+			if(between_target_distance<3) {
 				fired = 0;
 				hit =1 ;
 				slow_speed=1;
+				bullet_scale=1;
 			}
 		}
+		Vector3f va = new Vector3f(0.0f, 0.0f, -1.0f);
+		Vector3f vb = new Vector3f();
+		vb.set(aim_unit);
 
+		float angle = (float)Math.acos(va.dot(vb));
 		Matrix4f scaleMat =new Matrix4f();
 		Matrix4f transMat = new Matrix4f();
-		scaleMat.scale(1.0f);
+		Matrix4f rotatMat1 = new Matrix4f();
+		Matrix4f rotatMat2 = new Matrix4f();
+		Matrix4f rotatMat3 = new Matrix4f();
 		transMat.translation(bullet_pos);
-		bullet_lotation.rotate(1,aim_unit);
-		Matrix4f viewMat= new Matrix4f();
+		bullet_rotation_angle+=1f;
+		float remaing_length = bullet_pos.distance(proj_aim_location)/200;
+		rotatMat1.rotate(bullet_rotation_angle, 1.0f, 0.0f, 0.0f);
+		rotatMat2.rotate((float)Math.toRadians(90), 0.0f, 1.0f, 0.0f);
+		rotatMat3.rotate(angle,va.cross(vb));
+		scaleMat.scale(remaing_length);
 
-		out = (transMat.mul(bullet_lotation.mul(scaleMat)));
+
+		// Get the rotation axis and the angle between the vector
+
+		out = (transMat.mul(rotatMat3.mul(rotatMat2.mul(rotatMat1)).mul(scaleMat)));
 		out.get(farray);
 
 		return farray;
@@ -746,7 +762,7 @@ public class BasicRenderer {
 		shader.SetUniform("s_tex0", 0);
 		shader.SetUniform("s_texNor", TEX_POS_NORMAL);
 		shader.SetUniform("eyePos", mCamera.GetEye());
-		shader.SetUniform("lightPos", 50.0f, 50.0f, 50.0f);
+		shader.SetUniform("lightPos", 20.0f, 50.0f,-20.0f);
 		shader.SetUniform("materialDiff", 0.8f, 1.0f, 0.7f);
 		shader.SetUniform("materialSpec", 0.8f, 1.0f, 0.7f);
 		shader.SetUniform("materialAmbi", 0.0f, 0.0f, 0.0f);
@@ -783,12 +799,14 @@ public class BasicRenderer {
 		PassUniform(targetShader, 5);
 		if(fired==1) {
 			CreateVbo(bullet);
+			GLES20.glDisable(GLES20.GL_CULL_FACE);
 			GLES20.glDrawElements(GLES20.GL_TRIANGLE_STRIP, bullet.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
+			GLES20.glEnable(GLES20.GL_CULL_FACE);
 		}
 
 		CreateVbo(aim);
-		targetShader.Use();
-		PassUniform(targetShader, 2);
+		mShader.Use();
+		PassUniform(mShader, 2);
 		if(!mIsTouchOn&&fired!=1)
 			GLES20.glDrawElements(GLES20.GL_TRIANGLES, aim.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
 

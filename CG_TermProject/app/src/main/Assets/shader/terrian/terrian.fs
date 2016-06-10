@@ -46,5 +46,5 @@ precision mediump float;
      vec3 color =
      	phongLight(normalize(v_viewDir), normalize(v_normal), material, source);
 
- 	gl_FragColor = vec4(materialDiff, 1.0);
+ 	gl_FragColor =texture2D(s_tex0, v_texCoord);
  }

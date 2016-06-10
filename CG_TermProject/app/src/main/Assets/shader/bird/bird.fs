@@ -38,7 +38,7 @@ void main() {
 	vec3 materialDiff = texture2D(s_tex0, v_texCoord).xyz;
 
 	Material material =
-		Material(materialSh,
+		Material(materialSh*2.0,
 				 materialDiff, materialSpec, materialAmbi, materialEmit);
 	Light source =
 		Light(normalize(v_lightDir), sourceDiff, sourceSpec, sourceAmbi);
@@ -46,5 +46,5 @@ void main() {
     vec3 color =
     	phongLight(normalize(v_viewDir), normalize(v_normal), material, source);
 
-	gl_FragColor =texture2D(s_tex0, v_texCoord);
+	gl_FragColor = vec4(color,1.0);
 }

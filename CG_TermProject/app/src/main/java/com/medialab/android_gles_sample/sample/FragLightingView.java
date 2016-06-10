@@ -33,7 +33,7 @@ public class FragLightingView extends SampleView  {
 		fs = FileLoader.ReadTxtFile(this, "shader/bird/bird.fs");
 		mRenderer.SetProgram(vs, fs, mRenderer.targetShader);
 		vs = FileLoader.ReadTxtFile(this, "shader/noop.vs");
-		fs = FileLoader.ReadTxtFile(this, "shader/bird/bird.fs");
+		fs = FileLoader.ReadTxtFile(this, "shader/terrian/terrian.fs");
 		mRenderer.SetProgram(vs, fs, mRenderer.zoomShader);
 
 
@@ -61,7 +61,7 @@ public class FragLightingView extends SampleView  {
 		text_zoom[0] =  FileLoader.ReadTexture(this, R.drawable.zoom);
 
 		TexData[] text_bullet = new TexData[1]; //zoom
-		text_bullet[0] =  FileLoader.ReadTexture(this, R.drawable.tex_c_brick);
+		text_bullet[0] =  FileLoader.ReadTexture(this, R.drawable.brass);
 
 		mRenderer.SetNewModel(terrian, mRenderer.terrian);
 		mRenderer.SetNewModel(background, mRenderer.background);
