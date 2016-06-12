@@ -37,22 +37,27 @@ public class FragLightingView extends SampleView  {
 		mRenderer.SetProgram(vs, fs, mRenderer.zoomShader);
 
 
-		InputStream terrian = FileLoader.GetStream(this, "obj3d/mountain.obj");
-		InputStream target = FileLoader.GetStream(this, "obj3d/airplane.obj");
+		InputStream terrian = FileLoader.GetStream(this, "obj3d/green_mountain.obj");
+		InputStream target = FileLoader.GetStream(this, "obj3d/van.obj");
 		InputStream background = FileLoader.GetStream(this, "obj3d/cube.obj");
 		InputStream aim = FileLoader.GetStream(this, "obj3d/rectangle");
 		InputStream zoom = FileLoader.GetStream(this, "obj3d/zoom.obj");
 		InputStream bullet = FileLoader.GetStream(this, "obj3d/bullet.obj");
+		InputStream floor = FileLoader.GetStream(this, "obj3d/rectangle");
+		InputStream trees = FileLoader.GetStream(this, "obj3d/trees.obj");
+		InputStream house = FileLoader.GetStream(this, "obj3d/house.obj");
+		InputStream horse = FileLoader.GetStream(this, "obj3d/horse.obj");
+		InputStream gun = FileLoader.GetStream(this, "obj3d/gun.obj");
 
 
 		TexData[] text_terrian = new TexData[1]; //지형
-		text_terrian[0] =  FileLoader.ReadTexture(this, R.drawable.dark_mountain);
+		text_terrian[0] =  FileLoader.ReadTexture(this, R.drawable.green_mountain);
 
 		TexData[] text_target = new TexData[1]; //타겟
-		text_target[0] =  FileLoader.ReadTexture(this, R.drawable.airplane);
+		text_target[0] =  FileLoader.ReadTexture(this, R.drawable.van1);
 
 		TexData[] text_background = new TexData[1]; //배경
-		text_background[0] =  FileLoader.ReadTexture(this, R.drawable.background2);
+		text_background[0] =  FileLoader.ReadTexture(this, R.drawable.background4);
 
 		TexData[] text_aim = new TexData[1]; //배경
 		text_aim[0] =  FileLoader.ReadTexture(this, R.drawable.aim);
@@ -63,12 +68,35 @@ public class FragLightingView extends SampleView  {
 		TexData[] text_bullet = new TexData[1]; //zoom
 		text_bullet[0] =  FileLoader.ReadTexture(this, R.drawable.brass);
 
+		TexData[] text_floor = new TexData[1]; //zoom
+		text_floor[0] =  FileLoader.ReadTexture(this, R.drawable.floor);
+
+		TexData[] text_trees = new TexData[1]; //zoom
+		text_trees[0] =  FileLoader.ReadTexture(this, R.drawable.mountaincolor2);
+
+		TexData[] text_house = new TexData[1]; //zoom
+		text_house[0] =  FileLoader.ReadTexture(this, R.drawable.house);
+
+
+		TexData[] text_horse = new TexData[1]; //zoom
+		text_horse[0] =  FileLoader.ReadTexture(this, R.drawable.horse);
+
+
+		TexData[] text_gun = new TexData[1]; //zoom
+		text_gun[0] =  FileLoader.ReadTexture(this, R.drawable.gun);
+
+
 		mRenderer.SetNewModel(terrian, mRenderer.terrian);
 		mRenderer.SetNewModel(background, mRenderer.background);
 		mRenderer.SetNewModel(aim, mRenderer.aim);
 		mRenderer.SetNewModel(target, mRenderer.target);
 		mRenderer.SetNewModel(zoom, mRenderer.zoom);
 		mRenderer.SetNewModel(bullet, mRenderer.bullet);
+		mRenderer.SetNewModel(floor, mRenderer.floor);
+		mRenderer.SetNewModel(trees, mRenderer.trees);
+		mRenderer.SetNewModel(house, mRenderer.house);
+		mRenderer.SetNewModel(horse, mRenderer.horse);
+		mRenderer.SetNewModel(gun, mRenderer.gun);
 
 		mRenderer.SetTexture(TexData.Type.TEXDATA_GENERAL, text_terrian, mRenderer.terrian);
 		mRenderer.SetTexture(TexData.Type.TEXDATA_GENERAL,text_target, mRenderer.target);
@@ -76,11 +104,16 @@ public class FragLightingView extends SampleView  {
 		mRenderer.SetTexture(TexData.Type.TEXDATA_GENERAL,text_background, mRenderer.background);
 		mRenderer.SetTexture(TexData.Type.TEXDATA_GENERAL,text_zoom, mRenderer.zoom);
 		mRenderer.SetTexture(TexData.Type.TEXDATA_GENERAL,text_bullet, mRenderer.bullet);
+		mRenderer.SetTexture(TexData.Type.TEXDATA_GENERAL,text_floor, mRenderer.floor);
+		mRenderer.SetTexture(TexData.Type.TEXDATA_GENERAL,text_trees, mRenderer.trees);
+		mRenderer.SetTexture(TexData.Type.TEXDATA_GENERAL,text_house, mRenderer.house);
+		mRenderer.SetTexture(TexData.Type.TEXDATA_GENERAL,text_horse, mRenderer.horse);
+		mRenderer.SetTexture(TexData.Type.TEXDATA_GENERAL,text_gun, mRenderer.gun);
 
 		mRenderer.Initialize();
 
 		//mViewRenderer->OffAutoRotate();
-		mRenderer.GetCamera().SetEye(0.0f, 10.0f, 30.0f);
+		mRenderer.GetCamera().SetEye(20.0f, 80.0f, 95.0f);
 		mRenderer.GetCamera().SetAt(0, 0, 0);
 	}
 

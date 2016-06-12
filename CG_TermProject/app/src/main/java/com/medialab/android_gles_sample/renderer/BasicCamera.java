@@ -90,6 +90,14 @@ public class BasicCamera {
 		return mLookatMat;
 	}
 
+	public float[] GetViewMat_setEYE(Vector3f eye) {
+		Matrix.setLookAtM(mLookatMat, 0,
+				eye.x, eye.y, eye.z,
+				mAt.x, mAt.y, mAt.z,
+				mUp.x, mUp.y, mUp.z);
+		return mLookatMat;
+	}
+
 
 	void UpdateAngle()
 	{

@@ -6,6 +6,7 @@ import android.opengl.GLES20;
 import android.opengl.GLES30;
 import android.service.carrier.CarrierMessagingService;
 import android.util.Log;
+import android.view.VelocityTracker;
 
 import com.medialab.android_gles_sample.joml.AxisAngle4f;
 import com.medialab.android_gles_sample.joml.Matrix3f;
@@ -13,6 +14,7 @@ import com.medialab.android_gles_sample.joml.Matrix4f;
 import com.medialab.android_gles_sample.joml.Quaternionf;
 import com.medialab.android_gles_sample.joml.Vector2f;
 import com.medialab.android_gles_sample.joml.Vector3f;
+import com.medialab.android_gles_sample.joml.Vector4f;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -98,6 +100,11 @@ public class BasicRenderer {
 	public OBJECT background;
 	public OBJECT zoom;
 	public OBJECT bullet;
+	public OBJECT floor;
+	public OBJECT trees;
+	public OBJECT house;
+	public OBJECT horse;
+	public OBJECT gun;
 
 	public BasicShader mShader;
 	public BasicShader targetShader;
@@ -148,12 +155,18 @@ public class BasicRenderer {
 		backgroundShader = new BasicShader();
 		zoomShader = new BasicShader();
 
+
 		terrian = new OBJECT();
 		target = new OBJECT();
 		aim = new OBJECT();
 		background = new OBJECT();
 		zoom = new OBJECT();
 		bullet = new OBJECT();
+		floor =new OBJECT();
+		trees =new OBJECT();
+		house =new OBJECT();
+		horse =new OBJECT();
+		gun =new OBJECT();
 
 		accX=0;
 		accY=0;
@@ -433,16 +446,15 @@ public class BasicRenderer {
 
 
 	Vector3f target_location = new Vector3f();
-	Vector3f target_origin = new Vector3f(0.0f, 30.0f,-40.0f);
+	Vector3f target_origin = new Vector3f(-150.0f, 0.0f,-10.0f);
 	float hit_effect =0;
 	float moving_seed=0;
 	float left=1;
 	float[] GetWorldMatrix_TARTGET()
 	{
-		moving_seed+=0.01*target_speed*slow_speed;
-		target_location.set(target_origin.x+(float) Math.sin((double) moving_seed + 180)*20,
-				target_origin.y+(float) Math.cos((double) moving_seed)*20 ,
-				target_origin.z);
+		moving_seed+=0.15*target_speed*slow_speed;
+		target_location.set(target_origin.x+moving_seed,0.0f
+				 ,	target_origin.z);
 		float[] farray = new float[4*4];
 		Matrix4f out = new Matrix4f();
 
@@ -450,8 +462,6 @@ public class BasicRenderer {
 		Matrix4f transMat = new Matrix4f();
 		Matrix4f rotationMat = new Matrix4f();
 		Matrix4f viewMat= new Matrix4f();
-
-		rotationMat.rotate(90, 0.0f,1.0f,0.0f);
 
 		if(hit==1&&hit_effect<20)
 		{
@@ -463,20 +473,16 @@ public class BasicRenderer {
 			hit=0;
 			hit_effect=0;
 		}
+		rotationMat.rotate((float)Math.PI/2,0.0f,-1.0f,0.0f);
 
-
-		Vector3f zero = new Vector3f(0,0,0);
-		float[] viewMat_arr = GetCamera().GetViewMat(zero);
-		viewMat.set(viewMat_arr);
-
-		out = (transMat.translation(target_location.x, target_location.y, target_location.z).mul(rotationMat.mul(scaleMat.scale(0.01f))));
+		out = (transMat.translation(target_location.x, target_location.y,target_location.z).mul(rotationMat.mul(scaleMat.scale(0.05f))));
 		out.get(farray);
 
 		return farray;
 	}
 
 
-	float[] GetWorldMatrix_TERRIAN()
+	float[] GetWorldMatrix_TERRIAN(int number)
 	{
 		float[] farray = new float[4*4];
 		Matrix4f out = new Matrix4f();
@@ -486,8 +492,15 @@ public class BasicRenderer {
 		Matrix4f rotationMat = new Matrix4f();
 		Matrix4f viewMat= new Matrix4f();
 
-		transMat.translate(0.0f, -15.0f, 0.0f);
-		scaleMat.scale(1.0f * 0.000003f, 0.8f*0.000003f, 1.0f*0.000003f);
+		if(number==11) {
+			transMat.translate(0.0f, 0.0f, 110.0f);
+			scaleMat.scale(20.0f, 40.0f, 40.0f);
+		}
+		else if(number==12) {
+			transMat.translate(0.0f, 0.0f, -150.0f);
+			scaleMat.scale(35.0f, 20.0f, 70.0f);
+		}
+		rotationMat.rotation((float)(Math.PI/2),0.0f,1.0f,0.0f);
 
 		out = (transMat.mul(rotationMat).mul(scaleMat));
 		out.get(farray);
@@ -495,39 +508,16 @@ public class BasicRenderer {
 		return farray;
 	}
 
-	Vector3f ZOOM_location = new Vector3f();
 	Vector3f Fake_EYE = new Vector3f();
 	float scope_magnifiying_scale =3;
 	float[] GetWorldMatrix_ZOOM()
 	{
 		float[] farray = new float[4*4];
 		Matrix4f out = new Matrix4f();
-
-		ZOOM_location.set(Fake_EYE.x+aim_unit.x*scope_magnifiying_scale,Fake_EYE.y+aim_unit.y*scope_magnifiying_scale,
-				Fake_EYE.z+aim_unit.z*scope_magnifiying_scale);
-
-		Vector3f va = new Vector3f(0.0f, 0.0f, -1.0f);
-		Vector3f vb = new Vector3f();
-		vb.set(aim_unit);
-
-		// Get the rotation axis and the angle between the vector
-		float angle = (float)Math.acos(va.dot(vb));
-
-		Vector3f axis = va.cross(vb).normalize();
-
 		Matrix4f scaleMat =new Matrix4f();
 		Matrix4f transMat = new Matrix4f();
 		Matrix4f rotationMat = new Matrix4f();
 		Matrix4f viewMat= new Matrix4f();
-
-		scaleMat.scale(10.0f);
-		rotationMat.rotation(90, 1.0f, 0.0f, 0.0f);
-		rotationMat.rotate(angle,axis);
-		transMat.translation(ZOOM_location);
-
-		Vector3f zero = new Vector3f(0,0,0);
-		float[] viewMat_arr = GetCamera().GetViewMat(zero);
-		viewMat.set(viewMat_arr);
 
 		out = (transMat.mul(rotationMat.mul(scaleMat)));
 		out.get(farray);
@@ -549,7 +539,101 @@ public class BasicRenderer {
 		float[] viewMat_arr = GetCamera().GetViewMat(zero);
 		viewMat.set(viewMat_arr);
 
-		out = (transMat.translation(0.0f, 49.0f, 0.0f).mul(rotationMat.rotate(0, 0.0f, 0.0f, 0.0f).mul(scaleMat.scale(70.0f))));
+		out = (transMat.translation(0.0f, 199.0f, 0.0f).mul(rotationMat.rotate(0, 0.0f, 0.0f, 0.0f).mul(scaleMat.scale(200.0f))));
+		out.get(farray);
+
+		return farray;
+	}
+	float[] GetWorldMatrix_FLOOR() //6
+	{
+		float[] farray = new float[4*4];
+		Matrix4f out = new Matrix4f();
+
+		Matrix4f scaleMat =new Matrix4f();
+		Matrix4f transMat = new Matrix4f();
+		Matrix4f rotationMat = new Matrix4f();
+		Matrix4f viewMat= new Matrix4f();
+
+		Vector3f zero = new Vector3f(0,0,0);
+		float[] viewMat_arr = GetCamera().GetViewMat(zero);
+		viewMat.set(viewMat_arr);
+
+		out = (transMat.translation(0.0f, 0.0f, 0.0f).mul(rotationMat.rotate(0, 0.0f, 0.0f, 0.0f).mul(scaleMat.scale(200.0f))));
+		out.get(farray);
+
+		return farray;
+	}
+
+	float[] GetWorldMatrix_TREES() //6
+	{
+		float[] farray = new float[4*4];
+		Matrix4f out = new Matrix4f();
+
+		Matrix4f scaleMat =new Matrix4f();
+		Matrix4f transMat = new Matrix4f();
+		Matrix4f rotationMat = new Matrix4f();
+		Matrix4f viewMat= new Matrix4f();
+
+		rotationMat.rotate(-0.1f, 0.0f, 1.0f, 0.0f);
+
+		out = (transMat.translation(0.0f, 0.0f, 10.0f).mul(rotationMat.rotate(0, 0.0f, 0.0f, 0.0f).mul(scaleMat.scale(0.04f))));
+		out.get(farray);
+
+		return farray;
+	}
+
+	float[] GetWorldMatrix_HOUSE() //8
+	{
+		float[] farray = new float[4*4];
+		Matrix4f out = new Matrix4f();
+
+		Matrix4f scaleMat =new Matrix4f();
+		Matrix4f transMat = new Matrix4f();
+		Matrix4f rotationMat = new Matrix4f();
+		Matrix4f viewMat= new Matrix4f();
+
+		rotationMat.rotate(0, 0.0f, 0.0f, 0.0f);
+
+		out = (transMat.translation(70.0f, 0.0f, -60.0f).mul(rotationMat.rotate(0, 0.0f, 0.0f, 0.0f).mul(scaleMat.scale(0.2f))));
+		out.get(farray);
+
+		return farray;
+	}
+	float horse_moving_seed =0.0f;
+	Vector3f horse_pos = new Vector3f(40.0f, 0.0f, -50.0f);
+	float[] GetWorldMatrix_HORSE() //9
+	{
+		float[] farray = new float[4*4];
+		Matrix4f out = new Matrix4f();
+
+		Matrix4f scaleMat =new Matrix4f();
+		Matrix4f transMat = new Matrix4f();
+		Matrix4f rotationMat = new Matrix4f();
+		Matrix4f viewMat= new Matrix4f();
+
+		rotationMat.rotate(0, 0.0f, 0.0f, 0.0f);
+
+		out = (transMat.translation(horse_pos).mul(rotationMat.rotate(0, 0.0f, 0.0f, 0.0f).mul(scaleMat.scale(0.05f))));
+		out.get(farray);
+
+		return farray;
+	}
+
+	float[] GetWorldMatrix_GUN() //9
+	{
+		float[] farray = new float[4*4];
+		Matrix4f out = new Matrix4f();
+
+		Matrix4f scaleMat =new Matrix4f();
+		Matrix4f transMat = new Matrix4f();
+		Matrix4f rotationMat = new Matrix4f();
+		Matrix4f viewMat= new Matrix4f();
+
+		Vector3f eye = new Vector3f(GetCamera().mEye.x,GetCamera().mEye.y,GetCamera().mEye.z);
+
+		rotationMat.rotate(0, 0.0f, 0.0f, 0.0f);
+
+		out = (transMat.translation(eye).mul(rotationMat.rotate(0, 0.0f, 1.0f, 0.0f).mul(scaleMat.scale(10.f))));
 		out.get(farray);
 
 		return farray;
@@ -569,13 +653,16 @@ public class BasicRenderer {
 
 		if(fired==0)
 		{
-			bullet_pos.set(EYE_pos);
+			Vector3f tmp =new Vector3f();
+			tmp.add(EYE_pos);
+			tmp.add(aim_unit.x*40,aim_unit.y*40,aim_unit.z*40);
+			bullet_pos.set(tmp);
 		}
 		else if(fired==1)
 		{
 			bullet_offset.set(aim_unit.x * bullet_speed*slow_speed,aim_unit.y*bullet_speed*slow_speed, aim_unit.z*bullet_speed*slow_speed);
 			bullet_pos.add(bullet_offset);
-			if(bullet_pos.z<-50) {
+			if(bullet_pos.y<0) {
 				fired = 0;
 				hit=0;
 				slow_speed=1;
@@ -600,11 +687,12 @@ public class BasicRenderer {
 		Matrix4f rotatMat3 = new Matrix4f();
 		transMat.translation(bullet_pos);
 		bullet_rotation_angle+=1f;
-		float remaing_length = bullet_pos.distance(proj_aim_location)/200;
+
 		rotatMat1.rotate(bullet_rotation_angle, 1.0f, 0.0f, 0.0f);
 		rotatMat2.rotate((float)Math.toRadians(90), 0.0f, 1.0f, 0.0f);
 		rotatMat3.rotate(angle,va.cross(vb));
-		scaleMat.scale(remaing_length);
+
+		scaleMat.scale(0.01f);
 
 
 		// Get the rotation axis and the angle between the vector
@@ -615,12 +703,14 @@ public class BasicRenderer {
 		return farray;
 	}
 
-	Vector3f proj_aim_location = new Vector3f(0.0f, 10.0f,-50.0f);
+	Vector3f proj_aim_location = new Vector3f(0.0f, 0.0f,0.0f);
 	Vector3f last_proj_aim_location =new Vector3f();
 	Vector3f aim_location = new Vector3f(0.0f, 10.0f,-50.0f);
 	Vector3f aim_unit = new Vector3f();
+	float aim_speed = 5.0f;
 	int set = 1;
 	float aim_lastY=0, aim_lastZ=0, aim_lastX=0;
+	Vector4f aim_diff= new Vector4f();
 	float aim_dy=0, aim_dz=0, aim_dx=0;
 	float[] GetWorldMatrix_AIM()
 	{
@@ -628,32 +718,34 @@ public class BasicRenderer {
 		if(set==1)
 		{
 			aim_lastY = accY;
-			aim_lastZ=accZ;
+			aim_lastZ = accZ;
 			aim_lastX = accX;
 			set=0;
 		}
-		aim_dy = accY-aim_lastY;
-		aim_dz =accZ-aim_lastZ;
-		aim_dx = accX-aim_lastX;
-		//aim_lastY =accY;
-		//aim_lastZ=accZ;
+		aim_diff.y = accY-aim_lastY;
+		aim_diff.z = accZ-aim_lastZ;
+		aim_diff.x = accX-aim_lastX;
+		aim_diff.w = 1.0f;
 
 		if(fired==0) {
-			proj_aim_location.x += (aim_dy) / 5;
-			proj_aim_location.y += aim_dz / 5;
-
-			if (proj_aim_location.x < -50.0f)
-				proj_aim_location.x = -50.0f;
-			if (proj_aim_location.x > 50.0f)
-				proj_aim_location.x = 50.0f;
-			if (proj_aim_location.y < 0.0f)
-				proj_aim_location.y = 0.0f;
-			if (proj_aim_location.y > 100.0f)
-				proj_aim_location.y = 100.0f;
-			last_proj_aim_location.set(proj_aim_location);
-		}
+		if(aim_diff.z<0)
+			proj_aim_location.x += (aim_diff.y+0.4) / aim_speed;
+		else
+			proj_aim_location.x += (aim_diff.y-0.4) / aim_speed;
+		proj_aim_location.z -= aim_diff.z / aim_speed;
+		//proj_aim_location.y += aim_dy / 5;
 
 
+		if (proj_aim_location.x < -150.0f)
+			proj_aim_location.x = -150.0f;
+		if (proj_aim_location.x > 150.0f)
+			proj_aim_location.x = 150.0f;
+		if (proj_aim_location.z < -150.0f)
+			proj_aim_location.z = -150.0f;
+		if (proj_aim_location.z > 150.0f)
+			proj_aim_location.z = 150.0f;
+		last_proj_aim_location.set(proj_aim_location);
+	}
 
 
 		Vector3f EYE_position = new Vector3f(GetCamera().GetEye().x,GetCamera().GetEye().y, GetCamera().GetEye().z);
@@ -692,12 +784,16 @@ public class BasicRenderer {
 		return farray;
 	}
 
-	float magnifiying_scale =50;
+	float magnifiying_scale =115;
+
 	float[] GetViewMatrix()
 	{
 		float[] viewMat;
 		if (mIsTouchOn) {
-			GetCamera().setAT(proj_aim_location);
+			Vector3f at = new Vector3f(proj_aim_location.x+aim_unit.x*100,
+					proj_aim_location.y+aim_unit.y*100,
+					proj_aim_location.z+aim_unit.z*100);
+			GetCamera().setAT(at);
 			Vector3f zoomed_vec = new Vector3f(aim_unit.x*magnifiying_scale,
 					aim_unit.y*magnifiying_scale,
 					aim_unit.z*magnifiying_scale);
@@ -708,13 +804,16 @@ public class BasicRenderer {
 			GetCamera().setAT(origin_At);
 			viewMat = GetCamera().GetViewMat(origin);
 			Fake_EYE.set(mCamera.mEye.x, mCamera.mEye.y, mCamera.mEye.z);
+
 		}
 
 		if(fired==1)
 		{
-			GetCamera().setAT(last_proj_aim_location);
-			Fake_EYE.set(bullet_pos.x-aim_unit.x,bullet_pos.y-aim_unit.y,bullet_pos.z-aim_unit.z);
-			viewMat = GetCamera().GetViewMat(Fake_EYE);
+			GetCamera().setAT(proj_aim_location);
+			Vector3f tmp = new Vector3f();
+			tmp.set(bullet_pos);
+			tmp.sub(aim_unit.x*3, aim_unit.y*5, aim_unit.z*3);
+			viewMat = GetCamera().GetViewMat_setEYE(tmp);
 		}
 
 
@@ -737,8 +836,10 @@ public class BasicRenderer {
 //		float[] worldMat = new float[16];
 //		Matrix.setIdentityM(worldMat, 0);
 		float[] worldMat;
-		if(type==0)
-			worldMat = GetWorldMatrix_TERRIAN();
+		if(type==11)
+			worldMat = GetWorldMatrix_TERRIAN(11);
+		else if(type==12)
+			worldMat = GetWorldMatrix_TERRIAN(12);
 		else if(type==1)
 			worldMat = GetWorldMatrix_TARTGET();
 		else if(type==2)
@@ -749,8 +850,18 @@ public class BasicRenderer {
 			worldMat = GetWorldMatrix_ZOOM();
 		else if(type==5)
 			worldMat = GetWorldMatrix_BULLET();
+		else if(type==6)
+			worldMat = GetWorldMatrix_FLOOR();
+		else if(type==7)
+			worldMat = GetWorldMatrix_TREES();
+		else if(type==8)
+			worldMat = GetWorldMatrix_HOUSE();
+		else if(type==9)
+			worldMat = GetWorldMatrix_HORSE();
+		else if(type==10)
+			worldMat = GetWorldMatrix_GUN();
 		else
-			worldMat = GetWorldMatrix();
+		worldMat = GetWorldMatrix();
 
 		float[] viewMat = GetViewMatrix();
 		float[] projMat = mCamera.GetPerspectiveMat();
@@ -762,7 +873,7 @@ public class BasicRenderer {
 		shader.SetUniform("s_tex0", 0);
 		shader.SetUniform("s_texNor", TEX_POS_NORMAL);
 		shader.SetUniform("eyePos", mCamera.GetEye());
-		shader.SetUniform("lightPos", 20.0f, 50.0f,-20.0f);
+		shader.SetUniform("lightPos", 20.0f, 100.0f,-50.0f);
 		shader.SetUniform("materialDiff", 0.8f, 1.0f, 0.7f);
 		shader.SetUniform("materialSpec", 0.8f, 1.0f, 0.7f);
 		shader.SetUniform("materialAmbi", 0.0f, 0.0f, 0.0f);
@@ -775,12 +886,6 @@ public class BasicRenderer {
 
 
 	void Draw() {
-		CreateVbo(background);
-		GLES20.glFrontFace(GLES20.GL_CW);
-		mShader.Use();
-		PassUniform(mShader, 3);
-		GLES20.glDrawElements(GLES20.GL_TRIANGLES, background.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
-		GLES20.glFrontFace(GLES20.GL_CCW);
 
 		CreateVbo(target);
 		mShader.Use();
@@ -789,10 +894,41 @@ public class BasicRenderer {
 
 		CreateVbo(terrian);
 		mShader.Use();
-		PassUniform(mShader, 0);
+
 		GLES20.glEnable(GLES20.GL_BLEND);
 		GLES20.glBlendFunc(GLES20.GL_ONE, GLES20.GL_ZERO);
+		PassUniform(mShader, 11);
 		GLES20.glDrawElements(GLES20.GL_TRIANGLES, terrian.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
+		PassUniform(mShader, 12);
+		GLES20.glDrawElements(GLES20.GL_TRIANGLES, terrian.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
+
+		CreateVbo(background);
+		GLES20.glFrontFace(GLES20.GL_CW);
+		mShader.Use();
+		PassUniform(mShader, 3);
+		GLES20.glDrawElements(GLES20.GL_TRIANGLES, background.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
+		GLES20.glFrontFace(GLES20.GL_CCW);
+
+		CreateVbo(floor);
+		mShader.Use();
+		PassUniform(mShader, 6);
+		GLES20.glDrawElements(GLES20.GL_TRIANGLES, floor.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
+
+		CreateVbo(horse);
+		mShader.Use();
+		PassUniform(mShader, 9);
+		GLES20.glDrawElements(GLES20.GL_TRIANGLES, horse.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
+
+		CreateVbo(trees);
+		mShader.Use();
+		PassUniform(mShader, 7);
+		GLES20.glDrawElements(GLES20.GL_TRIANGLES, trees.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
+
+		CreateVbo(house);
+		mShader.Use();
+		PassUniform(mShader, 8);
+		GLES20.glDrawElements(GLES20.GL_TRIANGLES, house.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
+
 		GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
 
 		targetShader.Use();
@@ -844,6 +980,10 @@ public class BasicRenderer {
 		GLES20.glDeleteBuffers(1, aim.mVboIndices,0);
 		GLES20.glDeleteBuffers(1, zoom.mVboVertices, 0);
 		GLES20.glDeleteBuffers(1, zoom.mVboIndices,0);
+		GLES20.glDeleteBuffers(1, floor.mVboVertices, 0);
+		GLES20.glDeleteBuffers(1, floor.mVboIndices,0);
+		GLES20.glDeleteBuffers(1, trees.mVboVertices, 0);
+		GLES20.glDeleteBuffers(1, trees.mVboIndices,0);
 	}
 
 
