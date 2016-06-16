@@ -110,6 +110,7 @@ public class BasicRenderer {
 	public BasicShader targetShader;
 	public BasicShader backgroundShader;
 	public BasicShader zoomShader;
+	public BasicShader blurShader;
 
 	public BasicCamera mCamera;
 
@@ -154,6 +155,7 @@ public class BasicRenderer {
 		targetShader = new BasicShader();
 		backgroundShader = new BasicShader();
 		zoomShader = new BasicShader();
+		blurShader = new BasicShader();
 
 
 		terrian = new OBJECT();
@@ -784,12 +786,19 @@ public class BasicRenderer {
 		return farray;
 	}
 
+	int zoom_mode=0;
 	float magnifiying_scale =115;
-
+	float blur_time=0;
 	float[] GetViewMatrix()
 	{
 		float[] viewMat;
 		if (mIsTouchOn) {
+			zoom_mode=1;
+			blur_time+=0.002f;
+			if(blur_time>=1)
+			{
+				ready=1;
+			}
 			Vector3f at = new Vector3f(proj_aim_location.x+aim_unit.x*100,
 					proj_aim_location.y+aim_unit.y*100,
 					proj_aim_location.z+aim_unit.z*100);
@@ -801,13 +810,14 @@ public class BasicRenderer {
 			Fake_EYE.set(mCamera.mEye.x+zoomed_vec.x,mCamera.mEye.y+zoomed_vec.y,mCamera.mEye.z+zoomed_vec.z);
 		}
 		else  {
+			blur_time=0.0f;
+			zoom_mode=0;
 			GetCamera().setAT(origin_At);
 			viewMat = GetCamera().GetViewMat(origin);
 			Fake_EYE.set(mCamera.mEye.x, mCamera.mEye.y, mCamera.mEye.z);
-
 		}
 
-		if(fired==1)
+		if(fired==1&&zoom_mode==0)
 		{
 			GetCamera().setAT(proj_aim_location);
 			Vector3f tmp = new Vector3f();
@@ -832,7 +842,7 @@ public class BasicRenderer {
 		return outArray;
 	}
 
-	void PassUniform(BasicShader shader, int type) {
+	void PassUniform(BasicShader shader, int type, float blur) {
 //		float[] worldMat = new float[16];
 //		Matrix.setIdentityM(worldMat, 0);
 		float[] worldMat;
@@ -882,78 +892,112 @@ public class BasicRenderer {
 		shader.SetUniform("sourceDiff", 0.7f, 0.7f, 0.7f);
 		shader.SetUniform("sourceSpec", 1.0f, 1.0f, 1.0f);
 		shader.SetUniform("sourceAmbi", 0.0f, 0.0f, 0.0f);
+		shader.SetUniform("u_scale", 2.0f-blur,2.0f-blur,0.5f);
 	}
 
 
 	void Draw() {
 
-		CreateVbo(target);
-		mShader.Use();
-		PassUniform(mShader, 1);
-		GLES20.glDrawElements(GLES20.GL_TRIANGLES, target.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
-
-		CreateVbo(terrian);
-		mShader.Use();
 
 		GLES20.glEnable(GLES20.GL_BLEND);
 		GLES20.glBlendFunc(GLES20.GL_ONE, GLES20.GL_ZERO);
-		PassUniform(mShader, 11);
-		GLES20.glDrawElements(GLES20.GL_TRIANGLES, terrian.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
-		PassUniform(mShader, 12);
-		GLES20.glDrawElements(GLES20.GL_TRIANGLES, terrian.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
+		if(ready==0&&zoom_mode==1)
+		{
+			blurShader.Use();
+			CreateVbo(terrian);
+			PassUniform(mShader, 11, blur_time);
+			GLES20.glDrawElements(GLES20.GL_TRIANGLES, terrian.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
+			PassUniform(mShader, 12, blur_time);
+			GLES20.glDrawElements(GLES20.GL_TRIANGLES, terrian.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
+		}
+		else {
+			mShader.Use();
+			CreateVbo(terrian);
+			PassUniform(mShader, 11, 1);
+			GLES20.glDrawElements(GLES20.GL_TRIANGLES, terrian.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
+			PassUniform(mShader, 12, 1);
+			GLES20.glDrawElements(GLES20.GL_TRIANGLES, terrian.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
+		}
 
 		CreateVbo(background);
 		GLES20.glFrontFace(GLES20.GL_CW);
-		mShader.Use();
-		PassUniform(mShader, 3);
-		GLES20.glDrawElements(GLES20.GL_TRIANGLES, background.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
-		GLES20.glFrontFace(GLES20.GL_CCW);
+		if(ready==0&&zoom_mode==1) {
+			blurShader.Use();
+			PassUniform(blurShader, 3, blur_time);
+			GLES20.glDrawElements(GLES20.GL_TRIANGLES, background.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
+			GLES20.glFrontFace(GLES20.GL_CCW);
 
-		CreateVbo(floor);
-		mShader.Use();
-		PassUniform(mShader, 6);
-		GLES20.glDrawElements(GLES20.GL_TRIANGLES, floor.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
+			CreateVbo(target);
+			PassUniform(mShader, 1, 1);
+			GLES20.glDrawElements(GLES20.GL_TRIANGLES, target.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
 
-		CreateVbo(horse);
-		mShader.Use();
-		PassUniform(mShader, 9);
-		GLES20.glDrawElements(GLES20.GL_TRIANGLES, horse.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
+			CreateVbo(floor);
+			PassUniform(blurShader, 6, blur_time);
+			GLES20.glDrawElements(GLES20.GL_TRIANGLES, floor.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
 
-		CreateVbo(trees);
-		mShader.Use();
-		PassUniform(mShader, 7);
-		GLES20.glDrawElements(GLES20.GL_TRIANGLES, trees.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
+			CreateVbo(horse);
+			PassUniform(blurShader, 9,blur_time);
+			GLES20.glDrawElements(GLES20.GL_TRIANGLES, horse.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
 
-		CreateVbo(house);
-		mShader.Use();
-		PassUniform(mShader, 8);
-		GLES20.glDrawElements(GLES20.GL_TRIANGLES, house.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
+			CreateVbo(trees);
+			PassUniform(blurShader, 7,blur_time);
+			GLES20.glDrawElements(GLES20.GL_TRIANGLES, trees.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
+
+			CreateVbo(house);
+			PassUniform(blurShader, 8,blur_time);
+			GLES20.glDrawElements(GLES20.GL_TRIANGLES, house.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
+		}
+		else {
+			mShader.Use();
+			PassUniform(mShader, 3, 1);
+			GLES20.glDrawElements(GLES20.GL_TRIANGLES, background.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
+			GLES20.glFrontFace(GLES20.GL_CCW);
+
+			CreateVbo(floor);
+			PassUniform(mShader, 6, 1);
+			GLES20.glDrawElements(GLES20.GL_TRIANGLES, floor.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
+
+			CreateVbo(horse);
+			PassUniform(mShader, 9, 1);
+			GLES20.glDrawElements(GLES20.GL_TRIANGLES, horse.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
+
+			CreateVbo(trees);
+			PassUniform(mShader, 7, 1);
+			GLES20.glDrawElements(GLES20.GL_TRIANGLES, trees.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
+
+			CreateVbo(house);
+			PassUniform(mShader, 8, 1);
+			GLES20.glDrawElements(GLES20.GL_TRIANGLES, house.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
+
+			CreateVbo(target);
+			PassUniform(mShader, 1, 1);
+			GLES20.glDrawElements(GLES20.GL_TRIANGLES, target.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
+		}
 
 		GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
 
 		targetShader.Use();
-		PassUniform(targetShader, 5);
+		PassUniform(targetShader, 5, 1);
 		if(fired==1) {
 			CreateVbo(bullet);
 			GLES20.glDisable(GLES20.GL_CULL_FACE);
-			GLES20.glDrawElements(GLES20.GL_TRIANGLE_STRIP, bullet.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
+			GLES20.glDrawElements(GLES20.GL_TRIANGLES, bullet.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
 			GLES20.glEnable(GLES20.GL_CULL_FACE);
 		}
 
 		CreateVbo(aim);
 		mShader.Use();
-		PassUniform(mShader, 2);
+		PassUniform(mShader, 2,1);
 		if(!mIsTouchOn&&fired!=1)
 			GLES20.glDrawElements(GLES20.GL_TRIANGLES, aim.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
 
 		CreateVbo(zoom);
 		zoomShader.Use();
-		PassUniform(zoomShader, 4);
+		PassUniform(zoomShader, 4,1);
 		if(mIsTouchOn) {
-			ready=1;
 			GLES20.glDrawElements(GLES20.GL_TRIANGLES, zoom.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
 		}
-		else if(ready==1)
+		else if(ready==1&&mIsTouchOn==false)
 		{
 			fired=1;
 			slow_speed=0.1f;

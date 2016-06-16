@@ -35,6 +35,9 @@ public class FragLightingView extends SampleView  {
 		vs = FileLoader.ReadTxtFile(this, "shader/noop.vs");
 		fs = FileLoader.ReadTxtFile(this, "shader/terrian/terrian.fs");
 		mRenderer.SetProgram(vs, fs, mRenderer.zoomShader);
+		vs = FileLoader.ReadTxtFile(this, "shader/terrian/terrian.vs");
+		fs = FileLoader.ReadTxtFile(this, "shader/blur.fs");
+		mRenderer.SetProgram(vs, fs, mRenderer.blurShader);
 
 
 		InputStream terrian = FileLoader.GetStream(this, "obj3d/green_mountain.obj");
