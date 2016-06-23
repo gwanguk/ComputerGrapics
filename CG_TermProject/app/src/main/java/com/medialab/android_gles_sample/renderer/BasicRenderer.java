@@ -2,12 +2,16 @@ package com.medialab.android_gles_sample.renderer;
 
 
 import android.graphics.Shader;
+import android.media.AudioManager;
+import android.media.SoundPool;
 import android.opengl.GLES20;
 import android.opengl.GLES30;
 import android.service.carrier.CarrierMessagingService;
 import android.util.Log;
 import android.view.VelocityTracker;
 
+//import com.medialab.android_gles_sample.R;
+import com.medialab.android_gles_sample.Sound;
 import com.medialab.android_gles_sample.joml.AxisAngle4f;
 import com.medialab.android_gles_sample.joml.Matrix3f;
 import com.medialab.android_gles_sample.joml.Matrix4f;
@@ -71,6 +75,7 @@ public class BasicRenderer {
 			mIndexSize = 0;
 		}
 	}
+
 
 	Vector3f origin = new Vector3f(0,0,0);
 	Vector3f origin_At = new Vector3f(0,10,0);
@@ -142,6 +147,10 @@ public class BasicRenderer {
 	public int[] effect_tex2 = {0};
 	public int[] effect_tex3 = {0};
 
+	int render_start=0;
+
+	Sound mSound;
+
 	// vertex buffer
 
 	public BasicRenderer() {
@@ -186,9 +195,6 @@ public class BasicRenderer {
 
 		car_table[0]=1;car_table[1]=1;car_table[2]=1;car_table[3]=1;car_table[4]=1;
 
-
-
-
 	}
 
 	public BasicCamera GetCamera() {
@@ -208,6 +214,11 @@ public class BasicRenderer {
 		//mShader.Use();
 
 		return true;
+	}
+
+	public void SetSound(Sound _sound)
+	{
+		this.mSound=_sound;
 	}
 
 
@@ -463,7 +474,7 @@ public class BasicRenderer {
 
 
 	Vector3f target_location = new Vector3f();
-	Vector3f target_origin = new Vector3f(-250.0f, 0.0f,-20.0f);
+	Vector3f target_origin = new Vector3f(-400.0f, 0.0f,-20.0f);
 
 
 	float moving_seed=0;
@@ -490,11 +501,11 @@ public class BasicRenderer {
 		return farray;
 	}
 
-	Vector3f ter0 = new Vector3f(-350.0f, 0.0f,-20.0f);
-	Vector3f ter1 = new Vector3f(-270.0f, 0.0f,-15.0f);
-	Vector3f ter2 = new Vector3f(-320.0f, 0.0f,-17.0f);
-	Vector3f ter3 = new Vector3f(-290.0f, 0.0f,-19.0f);
-	Vector3f ter4 = new Vector3f(-410.0f, 0.0f,-17.0f);
+	Vector3f ter0 = new Vector3f(-500.0f, 0.0f,-20.0f);
+	Vector3f ter1 = new Vector3f(-420.0f, 0.0f,-15.0f);
+	Vector3f ter2 = new Vector3f(-470.0f, 0.0f,-17.0f);
+	Vector3f ter3 = new Vector3f(-430.0f, 0.0f,-19.0f);
+	Vector3f ter4 = new Vector3f(-550.0f, 0.0f,-17.0f);
 	Vector3f ter0_location = new Vector3f();
 	Vector3f ter1_location = new Vector3f();
 	Vector3f ter2_location = new Vector3f();
@@ -765,6 +776,7 @@ public class BasicRenderer {
 		else {
 			ret= 0;
 		}
+
 		return ret;
 	}
 
@@ -798,13 +810,19 @@ public class BasicRenderer {
 				effect_location.set(last_proj_aim_location);
 				slow_speed=1;
 				bullet_scale=1;
+				fly_start=0;
+				mSound.sound_play(6);
+				mSound.sound_play(1);
 			}
 			if(hit_check(bullet_pos)==1) {
+				mSound.sound_play(1);
+				mSound.sound_play(5);
 				fired = 0;
 				hit =1 ;
 				effect=2;
 				slow_speed=1;
 				bullet_scale=1;
+				fly_start=0;
 			}
 		}
 		Vector3f va = new Vector3f(0.0f, 0.0f, -1.0f);
@@ -865,10 +883,10 @@ public class BasicRenderer {
 			//proj_aim_location.y += aim_dy / 5;
 
 
-			if (proj_aim_location.x < -150.0f)
-				proj_aim_location.x = -150.0f;
-			if (proj_aim_location.x > 150.0f)
-				proj_aim_location.x = 150.0f;
+			if (proj_aim_location.x < -400.0f)
+				proj_aim_location.x = -400.0f;
+			if (proj_aim_location.x > 400.0f)
+				proj_aim_location.x = 400.0f;
 			if (proj_aim_location.z < -150.0f)
 				proj_aim_location.z = -150.0f;
 			if (proj_aim_location.z > 150.0f)
@@ -946,6 +964,7 @@ public class BasicRenderer {
 	int zoom_mode=0;
 	float magnifiying_scale =260;
 	float blur_time=0;
+	int fly_start=0;
 	float[] GetViewMatrix()
 	{
 		float[] viewMat;
@@ -972,10 +991,16 @@ public class BasicRenderer {
 			GetCamera().setAT(origin_At);
 			viewMat = GetCamera().GetViewMat(origin);
 			Fake_EYE.set(mCamera.mEye.x, mCamera.mEye.y, mCamera.mEye.z);
+			zoom_start=0;
+			mSound.sound_stop(4);
 		}
 
 		if(fired==1&&zoom_mode==0)
 		{
+			if(fly_start==0) {
+				mSound.sound_play(7);
+				fly_start=1;
+			}
 			GetCamera().setAT(proj_aim_location);
 			Vector3f tmp = new Vector3f();
 			tmp.set(bullet_pos);
@@ -1057,7 +1082,13 @@ public class BasicRenderer {
 	}
 
 	int car_num=0;
+	int zoom_start=0;
 	void Draw() {
+		if(render_start==0)
+		{
+			mSound.sound_play(1);
+			render_start=1;
+		}
 		GLES20.glEnable(GLES20.GL_BLEND);
 		GLES20.glBlendFunc(GLES20.GL_ONE, GLES20.GL_ZERO);
 
@@ -1193,12 +1224,21 @@ public class BasicRenderer {
 		PassUniform(zoomShader, 4, 1);
 		if(mIsTouchOn) {
 			GLES20.glDrawElements(GLES20.GL_TRIANGLES, zoom.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
+			if(zoom_start==0) {
+				mSound.sound_play(3);
+				zoom_start = 1;
+				mSound.sound_play(4);
+				mSound.sound_stop(1);
+			}
 		}
 		else if(ready==1&&mIsTouchOn==false)
 		{
+			mSound.sound_play(2);
+
 			fired=1;
 			slow_speed=0.08f;
 			ready=0;
+
 		}
 		GLES20.glDisable(GLES20.GL_BLEND);
 

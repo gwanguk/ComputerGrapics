@@ -21,6 +21,7 @@ public abstract class SampleView extends Activity implements SensorEventListener
     private GLView mGLView;
     private GLViewCallback mGLViewCallback;
     protected BasicRenderer mRenderer;
+    protected Sound mSound;
     int accX;
     int accY;
     int accZ;
@@ -34,7 +35,9 @@ public abstract class SampleView extends Activity implements SensorEventListener
 
         mGLView = new GLView(this);
         mGLViewCallback = new GLViewCallback(this);
+        mSound = new Sound(this);
         mRenderer = new BasicRenderer();
+        mRenderer.SetSound(mSound);
         mGLView.setRenderer(mGLViewCallback);
         setContentView(mGLView);
         addUi();
