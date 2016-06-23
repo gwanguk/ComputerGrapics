@@ -96,6 +96,7 @@ public class BasicRenderer {
 
 	public OBJECT terrian ;
 	public OBJECT target;
+	public OBJECT car;
 	public OBJECT aim;
 	public OBJECT background;
 	public OBJECT zoom;
@@ -105,6 +106,7 @@ public class BasicRenderer {
 	public OBJECT house;
 	public OBJECT horse;
 	public OBJECT gun;
+	public OBJECT burst;
 
 	public BasicShader mShader;
 	public BasicShader targetShader;
@@ -125,14 +127,20 @@ public class BasicRenderer {
 	static Vector2f ancPts;
 	static boolean isUpdateAnc;
 
-	float bullet_speed = 4;
-	float target_speed = 1;
+	float bullet_speed = 25;
+	float target_speed = 0.5f;
 	float slow_speed = 1;
+
+	int[] car_table =new int[5];
 
 	int ready=0;
 	int fired=0;
-
 	int hit=0;
+	int effect=0;
+
+	public	int[] effect_tex1 = {0};
+	public int[] effect_tex2 = {0};
+	public int[] effect_tex3 = {0};
 
 	// vertex buffer
 
@@ -160,6 +168,7 @@ public class BasicRenderer {
 
 		terrian = new OBJECT();
 		target = new OBJECT();
+		car = new OBJECT();
 		aim = new OBJECT();
 		background = new OBJECT();
 		zoom = new OBJECT();
@@ -169,10 +178,17 @@ public class BasicRenderer {
 		house =new OBJECT();
 		horse =new OBJECT();
 		gun =new OBJECT();
+		burst =new OBJECT();
 
 		accX=0;
 		accY=0;
 		accZ=0;
+
+		car_table[0]=1;car_table[1]=1;car_table[2]=1;car_table[3]=1;car_table[4]=1;
+
+
+
+
 	}
 
 	public BasicCamera GetCamera() {
@@ -199,7 +215,7 @@ public class BasicRenderer {
 	 * *** Interface functions ***
 	 ****************************/
 	public void SetNewModel(InputStream objSource, OBJECT object) {
-		ImportModel(objSource,object);
+		ImportModel(objSource, object);
 	}
 
 	public void SetNewModel(InputStream objSource, float scale, OBJECT object) {
@@ -223,6 +239,10 @@ public class BasicRenderer {
 			default:
 				break;
 		}
+	}
+	public void SetTexture(TexData.Type type, TexData[] newTex, int[] texid) {
+				Log.i(TAG, "Set Texture : general\n");
+				CreateTexBuffer(newTex[0], texid);
 	}
 
 	public boolean Initialize() {
@@ -277,14 +297,11 @@ public class BasicRenderer {
 		GLES20.glGenerateMipmap(GLES20.GL_TEXTURE_2D);
 		BasicUtils.CheckGLerror("glGenerateMipmap");
 
-
 		GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR_MIPMAP_LINEAR);
 		BasicUtils.CheckGLerror("glTexParameteri");
 
-
 		GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
 		BasicUtils.CheckGLerror("glTexParameteri");
-
 
 		GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_REPEAT);
 		GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_REPEAT);
@@ -396,8 +413,6 @@ public class BasicRenderer {
 		return P;
 	}
 
-
-
 	float[] GetWorldMatrix(){
 		float[] farray = new float[4*4];
 		FloatBuffer fb = FloatBuffer.allocate(4 * 4);
@@ -448,15 +463,16 @@ public class BasicRenderer {
 
 
 	Vector3f target_location = new Vector3f();
-	Vector3f target_origin = new Vector3f(-150.0f, 0.0f,-10.0f);
-	float hit_effect =0;
+	Vector3f target_origin = new Vector3f(-250.0f, 0.0f,-20.0f);
+
+
 	float moving_seed=0;
-	float left=1;
+	int vib=1;
 	float[] GetWorldMatrix_TARTGET()
 	{
 		moving_seed+=0.15*target_speed*slow_speed;
 		target_location.set(target_origin.x+moving_seed,0.0f
-				 ,	target_origin.z);
+				,	target_origin.z);
 		float[] farray = new float[4*4];
 		Matrix4f out = new Matrix4f();
 
@@ -465,24 +481,80 @@ public class BasicRenderer {
 		Matrix4f rotationMat = new Matrix4f();
 		Matrix4f viewMat= new Matrix4f();
 
-		if(hit==1&&hit_effect<20)
-		{
-			scaleMat.scale(hit_effect/10);
-			hit_effect= hit_effect+1;
-		}
-		else if(hit==1&&hit_effect>=20)
-		{
-			hit=0;
-			hit_effect=0;
-		}
 		rotationMat.rotate((float)Math.PI/2,0.0f,-1.0f,0.0f);
 
-		out = (transMat.translation(target_location.x, target_location.y,target_location.z).mul(rotationMat.mul(scaleMat.scale(0.05f))));
+		out = (transMat.translation(target_location.x , target_location.y, target_location.z).mul(rotationMat.mul(scaleMat.scale(0.05f))));
+
 		out.get(farray);
 
 		return farray;
 	}
 
+	Vector3f ter0 = new Vector3f(-350.0f, 0.0f,-20.0f);
+	Vector3f ter1 = new Vector3f(-270.0f, 0.0f,-15.0f);
+	Vector3f ter2 = new Vector3f(-320.0f, 0.0f,-17.0f);
+	Vector3f ter3 = new Vector3f(-290.0f, 0.0f,-19.0f);
+	Vector3f ter4 = new Vector3f(-410.0f, 0.0f,-17.0f);
+	Vector3f ter0_location = new Vector3f();
+	Vector3f ter1_location = new Vector3f();
+	Vector3f ter2_location = new Vector3f();
+	Vector3f ter3_location = new Vector3f();
+	Vector3f ter4_location = new Vector3f();
+	float left_right_seed=0;
+	float[] GetWorldMatrix_CAR()
+	{
+		left_right_seed+=0.007f;
+		if(left_right_seed>Math.PI*2)
+			left_right_seed=0;
+		Vector3f location = new Vector3f();
+		float left_right;
+		moving_seed+=0.16*target_speed*slow_speed;
+		if(car_num==0)
+		{
+			left_right=(float)Math.sin((double)(left_right_seed)+2.5f)*slow_speed;
+			ter0_location.set(ter0.x+moving_seed,0.0f,ter0.z+left_right*5);
+			location.set(ter0_location);
+		}
+		else if(car_num==1)
+		{
+			left_right=(float)Math.sin((double)(left_right_seed)+2.0f)*slow_speed;
+			ter1_location.set(ter1.x+moving_seed,0.0f,ter1.z+left_right*5);
+			location.set(ter1_location);
+		}
+		else if(car_num==2)
+		{
+			left_right=(float)Math.sin((double)(left_right_seed)+1.5f)*slow_speed;
+			ter2_location.set(ter2.x+moving_seed,0.0f,ter2.z+left_right*5);
+			location.set(ter2_location);
+		}
+		else if(car_num==3)
+		{
+			left_right=(float)Math.sin((double)(left_right_seed)+1.0f)*slow_speed;
+			ter3_location.set(ter3.x+moving_seed,0.0f,ter3.z+left_right*5);
+			location.set(ter3_location);
+		}
+		else if(car_num==4)
+		{
+			left_right=(float)Math.sin((double)(left_right_seed)+0.5f)*slow_speed;
+			ter4_location.set(ter4.x+moving_seed,0.0f,ter4.z+left_right*5);
+			location.set(ter4_location);
+		}
+
+		float[] farray = new float[4*4];
+		Matrix4f out = new Matrix4f();
+
+		Matrix4f scaleMat =new Matrix4f();
+		Matrix4f transMat = new Matrix4f();
+		Matrix4f rotationMat = new Matrix4f();
+
+		rotationMat.rotate((float)Math.PI/2,0.0f,-1.0f,0.0f);
+
+		out = (transMat.translation(location.x , location.y, location.z).mul(rotationMat.mul(scaleMat.scale(0.05f))));
+
+		out.get(farray);
+
+		return farray;
+	}
 
 	float[] GetWorldMatrix_TERRIAN(int number)
 	{
@@ -495,12 +567,12 @@ public class BasicRenderer {
 		Matrix4f viewMat= new Matrix4f();
 
 		if(number==11) {
-			transMat.translate(0.0f, 0.0f, 110.0f);
-			scaleMat.scale(20.0f, 40.0f, 40.0f);
+			transMat.translate(-50.0f, 0.0f, 150.0f);
+			scaleMat.scale(40.0f,60.0f, 80.0f);
 		}
 		else if(number==12) {
-			transMat.translate(0.0f, 0.0f, -150.0f);
-			scaleMat.scale(35.0f, 20.0f, 70.0f);
+			transMat.translate(0.0f, 0.0f, -300.0f);
+			scaleMat.scale(60.0f, 60.0f, 100.0f);
 		}
 		rotationMat.rotation((float)(Math.PI/2),0.0f,1.0f,0.0f);
 
@@ -541,7 +613,7 @@ public class BasicRenderer {
 		float[] viewMat_arr = GetCamera().GetViewMat(zero);
 		viewMat.set(viewMat_arr);
 
-		out = (transMat.translation(0.0f, 199.0f, 0.0f).mul(rotationMat.rotate(0, 0.0f, 0.0f, 0.0f).mul(scaleMat.scale(200.0f))));
+		out = (transMat.translation(0.0f, 389.0f, 0.0f).mul(rotationMat.rotate(0, 0.0f, 0.0f, 0.0f).mul(scaleMat.scale(400f))));
 		out.get(farray);
 
 		return farray;
@@ -560,7 +632,7 @@ public class BasicRenderer {
 		float[] viewMat_arr = GetCamera().GetViewMat(zero);
 		viewMat.set(viewMat_arr);
 
-		out = (transMat.translation(0.0f, 0.0f, 0.0f).mul(rotationMat.rotate(0, 0.0f, 0.0f, 0.0f).mul(scaleMat.scale(200.0f))));
+		out = (transMat.translation(0.0f, 0.0f, 0.0f).mul(rotationMat.rotate(0, 0.0f, 0.0f, 0.0f).mul(scaleMat.scale(420.0f,0.0f,200f))));
 		out.get(farray);
 
 		return farray;
@@ -596,13 +668,13 @@ public class BasicRenderer {
 
 		rotationMat.rotate(0, 0.0f, 0.0f, 0.0f);
 
-		out = (transMat.translation(70.0f, 0.0f, -60.0f).mul(rotationMat.rotate(0, 0.0f, 0.0f, 0.0f).mul(scaleMat.scale(0.2f))));
+		out = (transMat.translation(70.0f, 0.0f, -80.0f).mul(rotationMat.rotate(0, 0.0f, 0.0f, 0.0f).mul(scaleMat.scale(0.2f))));
 		out.get(farray);
 
 		return farray;
 	}
 	float horse_moving_seed =0.0f;
-	Vector3f horse_pos = new Vector3f(40.0f, 0.0f, -50.0f);
+	Vector3f horse_pos = new Vector3f(40.0f, 0.0f, -80.0f);
 	float[] GetWorldMatrix_HORSE() //9
 	{
 		float[] farray = new float[4*4];
@@ -626,19 +698,74 @@ public class BasicRenderer {
 		float[] farray = new float[4*4];
 		Matrix4f out = new Matrix4f();
 
+		Vector3f va = new Vector3f(0.0f, 0.0f, -1.0f);
+		Vector3f vb = new Vector3f(aim_unit);
+		float angle =(float)Math.acos(va.dot(vb));
+		Vector3f axis = va.cross(vb);
+
 		Matrix4f scaleMat =new Matrix4f();
 		Matrix4f transMat = new Matrix4f();
-		Matrix4f rotationMat = new Matrix4f();
+		Matrix4f rotationMat1 = new Matrix4f();
+		Matrix4f rotationMat2 = new Matrix4f();
+		Matrix4f rotationMat3 = new Matrix4f();
+		Matrix4f rotationMat4 = new Matrix4f();
 		Matrix4f viewMat= new Matrix4f();
 
 		Vector3f eye = new Vector3f(GetCamera().mEye.x,GetCamera().mEye.y,GetCamera().mEye.z);
+		transMat.translation(eye.x, eye.y - 12, eye.z-5);
+		rotationMat1.rotation((float) Math.PI / 2, 1.0f, 0.0f, 0.0f);
+		rotationMat2.rotation((float)Math.PI/2, 0.0f, 1.0f, 0.0f);
+		rotationMat3.rotation(0.1f, -1.0f, 0.0f, 0.0f);
+		rotationMat4.rotation(angle, axis);
 
-		rotationMat.rotate(0, 0.0f, 0.0f, 0.0f);
-
-		out = (transMat.translation(eye).mul(rotationMat.rotate(0, 0.0f, 1.0f, 0.0f).mul(scaleMat.scale(10.f))));
+		out = (transMat.mul(rotationMat4.mul(rotationMat3.mul(rotationMat2.mul(rotationMat1))).mul(scaleMat.scale(1.0f))));
 		out.get(farray);
 
 		return farray;
+	}
+
+	Vector3f effect_location = new Vector3f();
+	int hit_check(Vector3f bullet_pos)
+	{
+		int ret =0;
+		if (bullet_pos.distance(ter0_location) < 5) {
+			hit=1;
+			effect_location.set(ter0_location);
+			car_table[0]=0;
+			ret= 1;
+		}
+		else if (bullet_pos.distance(ter1_location) < 5) {
+			hit=1;
+			effect_location.set(ter1_location);
+			car_table[1]=0;
+			ret= 1;
+
+		}
+		else if (bullet_pos.distance(ter2_location) < 5) {
+			hit=1;
+			effect_location.set(ter2_location);
+			car_table[2]=0;
+			ret= 1;
+
+		}
+		else if (bullet_pos.distance(ter3_location) < 5) {
+			hit=1;
+			effect_location.set(ter3_location);
+			car_table[3]=0;
+			ret= 1;
+
+		}
+		else if (bullet_pos.distance(ter4_location) < 5) {
+			hit=1;
+			effect_location.set(ter4_location);
+			car_table[4]=0;
+			ret= 1;
+
+		}
+		else {
+			ret= 0;
+		}
+		return ret;
 	}
 
 	Vector3f bullet_pos = new Vector3f();
@@ -666,13 +793,16 @@ public class BasicRenderer {
 			bullet_pos.add(bullet_offset);
 			if(bullet_pos.y<0) {
 				fired = 0;
-				hit=0;
+				hit=1;
+				effect=1;
+				effect_location.set(last_proj_aim_location);
 				slow_speed=1;
 				bullet_scale=1;
 			}
-			if(between_target_distance<3) {
+			if(hit_check(bullet_pos)==1) {
 				fired = 0;
 				hit =1 ;
+				effect=2;
 				slow_speed=1;
 				bullet_scale=1;
 			}
@@ -696,9 +826,6 @@ public class BasicRenderer {
 
 		scaleMat.scale(0.01f);
 
-
-		// Get the rotation axis and the angle between the vector
-
 		out = (transMat.mul(rotatMat3.mul(rotatMat2.mul(rotatMat1)).mul(scaleMat)));
 		out.get(farray);
 
@@ -709,7 +836,7 @@ public class BasicRenderer {
 	Vector3f last_proj_aim_location =new Vector3f();
 	Vector3f aim_location = new Vector3f(0.0f, 10.0f,-50.0f);
 	Vector3f aim_unit = new Vector3f();
-	float aim_speed = 5.0f;
+	float aim_speed = 3.0f;
 	int set = 1;
 	float aim_lastY=0, aim_lastZ=0, aim_lastX=0;
 	Vector4f aim_diff= new Vector4f();
@@ -730,35 +857,26 @@ public class BasicRenderer {
 		aim_diff.w = 1.0f;
 
 		if(fired==0) {
-		if(aim_diff.z<0)
-			proj_aim_location.x += (aim_diff.y+0.4) / aim_speed;
-		else
-			proj_aim_location.x += (aim_diff.y-0.4) / aim_speed;
-		proj_aim_location.z -= aim_diff.z / aim_speed;
-		//proj_aim_location.y += aim_dy / 5;
+			if(aim_diff.z<0)
+				proj_aim_location.x += (aim_diff.y+0.4) / aim_speed;
+			else
+				proj_aim_location.x += (aim_diff.y-0.4) / aim_speed;
+			proj_aim_location.z -= aim_diff.z / aim_speed;
+			//proj_aim_location.y += aim_dy / 5;
 
 
-		if (proj_aim_location.x < -150.0f)
-			proj_aim_location.x = -150.0f;
-		if (proj_aim_location.x > 150.0f)
-			proj_aim_location.x = 150.0f;
-		if (proj_aim_location.z < -150.0f)
-			proj_aim_location.z = -150.0f;
-		if (proj_aim_location.z > 150.0f)
-			proj_aim_location.z = 150.0f;
-		last_proj_aim_location.set(proj_aim_location);
-	}
+			if (proj_aim_location.x < -150.0f)
+				proj_aim_location.x = -150.0f;
+			if (proj_aim_location.x > 150.0f)
+				proj_aim_location.x = 150.0f;
+			if (proj_aim_location.z < -150.0f)
+				proj_aim_location.z = -150.0f;
+			if (proj_aim_location.z > 150.0f)
+				proj_aim_location.z = 150.0f;
+			last_proj_aim_location.set(proj_aim_location);
+		}
 
-
-		Vector3f EYE_position = new Vector3f(GetCamera().GetEye().x,GetCamera().GetEye().y, GetCamera().GetEye().z);
-
-		Vector3f va = new Vector3f(0.0f, 0.0f, -1.0f);
-		Vector3f vb = aim_unit;
-
-		// Get the rotation axis and the angle between the vector
-		float angle = (float)Math.acos(Math.min(1.0f, va.dot(vb)));
-
-		Vector3f axis = va.cross(vb).normalize();
+	Vector3f EYE_position = new Vector3f(GetCamera().GetEye().x,GetCamera().GetEye().y, GetCamera().GetEye().z);
 
 		aim_unit.set(proj_aim_location.x - EYE_position.x,
 				proj_aim_location.y - EYE_position.y,
@@ -776,9 +894,7 @@ public class BasicRenderer {
 		Matrix4f rotationMat = new Matrix4f();
 
 		transMat.translation(aim_location.x, aim_location.y, aim_location.z);
-		scaleMat.scale(0.3f);
-		rotationMat.rotate(90, 1.0f, 0.0f, 0.0f);
-		rotationMat.rotate(angle,axis);
+		scaleMat.scale(0.03f);
 
 		out = (transMat.mul(rotationMat.mul(scaleMat)));
 		out.get(farray);
@@ -786,16 +902,57 @@ public class BasicRenderer {
 		return farray;
 	}
 
+	float current_effect=0;
+	float effect_scale=0.1f;
+	float[] GetWorldMatrix_BURST()
+	{
+		effect_scale+=0.005f;
+		if(effect==1) {
+			if (effect_scale > 0.3f) {
+				effect_scale = 0.1f;
+				hit = 0;
+			}
+		}
+		else if(effect==2){
+			if (effect_scale > 1.2f) {
+				effect_scale = 0.1f;
+				hit = 0;
+			}
+		}
+		float[] farray = new float[4*4];
+		Matrix4f out = new Matrix4f();
+
+		Matrix4f scaleMat =new Matrix4f();
+		Matrix4f transMat = new Matrix4f();
+		Matrix4f rotationMat = new Matrix4f();
+		rotationMat.rotation((float)Math.PI/2,-1.0f,0.0f,0.0f);
+		float current_effect_scale=1;
+		transMat.translation(effect_location);
+		if(current_effect==0)
+			current_effect_scale=effect_scale+0.1f;
+		else if(current_effect==1)
+			current_effect_scale=effect_scale;
+		else if(current_effect==2)
+			current_effect_scale=effect_scale-0.1f;
+
+		scaleMat.scale(current_effect_scale/2);
+
+		out =(transMat.mul(rotationMat.mul( scaleMat)));
+		out.get(farray);
+
+		return farray;
+	}
+
 	int zoom_mode=0;
-	float magnifiying_scale =115;
+	float magnifiying_scale =260;
 	float blur_time=0;
 	float[] GetViewMatrix()
 	{
 		float[] viewMat;
 		if (mIsTouchOn) {
 			zoom_mode=1;
-			blur_time+=0.002f;
-			if(blur_time>=1)
+			blur_time+=0.00001f;
+			if(blur_time>=0.005f)
 			{
 				ready=1;
 			}
@@ -870,8 +1027,12 @@ public class BasicRenderer {
 			worldMat = GetWorldMatrix_HORSE();
 		else if(type==10)
 			worldMat = GetWorldMatrix_GUN();
+		else if(type==13)
+			worldMat = GetWorldMatrix_CAR();
+		else if(type==14)
+			worldMat = GetWorldMatrix_BURST();
 		else
-		worldMat = GetWorldMatrix();
+			worldMat = GetWorldMatrix();
 
 		float[] viewMat = GetViewMatrix();
 		float[] projMat = mCamera.GetPerspectiveMat();
@@ -892,44 +1053,27 @@ public class BasicRenderer {
 		shader.SetUniform("sourceDiff", 0.7f, 0.7f, 0.7f);
 		shader.SetUniform("sourceSpec", 1.0f, 1.0f, 1.0f);
 		shader.SetUniform("sourceAmbi", 0.0f, 0.0f, 0.0f);
-		shader.SetUniform("u_scale", 2.0f-blur,2.0f-blur,0.5f);
+		shader.SetUniform("u_scale", 1.005f-blur,1.005f-blur,0.5f);
 	}
 
-
+	int car_num=0;
 	void Draw() {
-
-
 		GLES20.glEnable(GLES20.GL_BLEND);
 		GLES20.glBlendFunc(GLES20.GL_ONE, GLES20.GL_ZERO);
-		if(ready==0&&zoom_mode==1)
-		{
-			blurShader.Use();
-			CreateVbo(terrian);
-			PassUniform(mShader, 11, blur_time);
-			GLES20.glDrawElements(GLES20.GL_TRIANGLES, terrian.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
-			PassUniform(mShader, 12, blur_time);
-			GLES20.glDrawElements(GLES20.GL_TRIANGLES, terrian.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
-		}
-		else {
-			mShader.Use();
-			CreateVbo(terrian);
-			PassUniform(mShader, 11, 1);
-			GLES20.glDrawElements(GLES20.GL_TRIANGLES, terrian.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
-			PassUniform(mShader, 12, 1);
-			GLES20.glDrawElements(GLES20.GL_TRIANGLES, terrian.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
-		}
 
-		CreateVbo(background);
-		GLES20.glFrontFace(GLES20.GL_CW);
 		if(ready==0&&zoom_mode==1) {
 			blurShader.Use();
+			CreateVbo(terrian);
+			PassUniform(blurShader, 11, blur_time);
+			GLES20.glDrawElements(GLES20.GL_TRIANGLES, terrian.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
+			PassUniform(blurShader, 12, blur_time);
+			GLES20.glDrawElements(GLES20.GL_TRIANGLES, terrian.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
+
+			CreateVbo(background);
 			PassUniform(blurShader, 3, blur_time);
+			GLES20.glFrontFace(GLES20.GL_CW);
 			GLES20.glDrawElements(GLES20.GL_TRIANGLES, background.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
 			GLES20.glFrontFace(GLES20.GL_CCW);
-
-			CreateVbo(target);
-			PassUniform(mShader, 1, 1);
-			GLES20.glDrawElements(GLES20.GL_TRIANGLES, target.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
 
 			CreateVbo(floor);
 			PassUniform(blurShader, 6, blur_time);
@@ -946,10 +1090,30 @@ public class BasicRenderer {
 			CreateVbo(house);
 			PassUniform(blurShader, 8,blur_time);
 			GLES20.glDrawElements(GLES20.GL_TRIANGLES, house.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
-		}
-		else {
+
+			CreateVbo(target);
+			PassUniform(blurShader, 1, blur_time);
+			GLES20.glDrawElements(GLES20.GL_TRIANGLES, target.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
+
+			CreateVbo(car);
+			for(car_num=0;car_num<5;car_num++)
+			{
+				if(car_table[car_num]==1) {
+					PassUniform(blurShader, 13, blur_time);
+					GLES20.glDrawElements(GLES20.GL_TRIANGLES, car.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
+				}
+			}
+		} else {
 			mShader.Use();
+			CreateVbo(terrian);
+			PassUniform(mShader, 11, 1);
+			GLES20.glDrawElements(GLES20.GL_TRIANGLES, terrian.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
+			PassUniform(mShader, 12, 1);
+			GLES20.glDrawElements(GLES20.GL_TRIANGLES, terrian.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
+			mShader.Use();
+			CreateVbo(background);
 			PassUniform(mShader, 3, 1);
+			GLES20.glFrontFace(GLES20.GL_CW);
 			GLES20.glDrawElements(GLES20.GL_TRIANGLES, background.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
 			GLES20.glFrontFace(GLES20.GL_CCW);
 
@@ -972,6 +1136,39 @@ public class BasicRenderer {
 			CreateVbo(target);
 			PassUniform(mShader, 1, 1);
 			GLES20.glDrawElements(GLES20.GL_TRIANGLES, target.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
+
+			CreateVbo(gun);
+			PassUniform(mShader, 10, 1);
+			GLES20.glDrawElements(GLES20.GL_TRIANGLES, gun.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
+
+			CreateVbo(burst);
+			if(hit==1) {
+				if(effect==1)
+				{
+					GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, effect_tex2[0]);
+					PassUniform(mShader, 14, 1);
+					GLES20.glDrawElements(GLES20.GL_POINTS, burst.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
+				}
+				else if(effect==2) {
+					for (current_effect = 0; current_effect < 3; current_effect++) {
+						if (current_effect == 1)
+							GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, effect_tex2[0]);
+						else
+							GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, effect_tex1[0]);
+						PassUniform(mShader, 14, 1);
+						GLES20.glDrawElements(GLES20.GL_POINTS, burst.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
+					}
+				}
+			}
+
+			CreateVbo(car);
+			for(car_num=0;car_num<5;car_num++)
+			{
+				if(car_table[car_num]==1) {
+					PassUniform(mShader, 13, 1);
+					GLES20.glDrawElements(GLES20.GL_TRIANGLES, car.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
+				}
+			}
 		}
 
 		GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
@@ -987,23 +1184,24 @@ public class BasicRenderer {
 
 		CreateVbo(aim);
 		mShader.Use();
-		PassUniform(mShader, 2,1);
+		PassUniform(mShader, 2, 1);
 		if(!mIsTouchOn&&fired!=1)
 			GLES20.glDrawElements(GLES20.GL_TRIANGLES, aim.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
 
 		CreateVbo(zoom);
 		zoomShader.Use();
-		PassUniform(zoomShader, 4,1);
+		PassUniform(zoomShader, 4, 1);
 		if(mIsTouchOn) {
 			GLES20.glDrawElements(GLES20.GL_TRIANGLES, zoom.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
 		}
 		else if(ready==1&&mIsTouchOn==false)
 		{
 			fired=1;
-			slow_speed=0.1f;
+			slow_speed=0.08f;
 			ready=0;
 		}
 		GLES20.glDisable(GLES20.GL_BLEND);
+
 
 		Bufferclear();
 
@@ -1028,6 +1226,16 @@ public class BasicRenderer {
 		GLES20.glDeleteBuffers(1, floor.mVboIndices,0);
 		GLES20.glDeleteBuffers(1, trees.mVboVertices, 0);
 		GLES20.glDeleteBuffers(1, trees.mVboIndices,0);
+		GLES20.glDeleteBuffers(1, horse.mVboVertices, 0);
+		GLES20.glDeleteBuffers(1, horse.mVboIndices,0);
+		GLES20.glDeleteBuffers(1, house.mVboVertices, 0);
+		GLES20.glDeleteBuffers(1, house.mVboIndices,0);
+		GLES20.glDeleteBuffers(1, gun.mVboVertices, 0);
+		GLES20.glDeleteBuffers(1, gun.mVboIndices,0);
+		GLES20.glDeleteBuffers(1, car.mVboVertices, 0);
+		GLES20.glDeleteBuffers(1, car.mVboIndices,0);
+		GLES20.glDeleteBuffers(1, burst.mVboVertices, 0);
+		GLES20.glDeleteBuffers(1, burst.mVboIndices,0);
 	}
 
 
