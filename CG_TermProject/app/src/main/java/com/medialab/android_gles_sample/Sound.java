@@ -35,8 +35,11 @@ public class Sound {
 
     int fly;
     int fly_id;
+
+    int cheerup;
+    int cheerup_id;
     public Sound(Context context) {
-        sound = new SoundPool(7, AudioManager.STREAM_MUSIC,0);
+        sound = new SoundPool(8, AudioManager.STREAM_MUSIC,0);
         bgm  = sound.load(context, R.raw.bgm, 1);
         shot  = sound.load(context, R.raw.shot, 1);
         zoom = sound.load(context, R.raw.zoom,1);
@@ -44,6 +47,7 @@ public class Sound {
         burst = sound.load(context, R.raw.burst,1);
         miss = sound.load(context, R.raw.miss,1);
         fly = sound.load(context, R.raw.fly,1);
+        cheerup = sound.load(context, R.raw.cheerup,1);
     }
 
     public void sound_play(int num)
@@ -62,6 +66,8 @@ public class Sound {
             miss_id = sound.play(miss,1.0f,1.0f,1,0,1.0f);
         if(num==7)
             fly_id = sound.play(fly,1.0f,1.0f,1,0,1.0f);
+        if(num==8)
+            cheerup_id = sound.play(cheerup,1.0f,1.0f,1,0,1.0f);
     }
     public void sound_stop(int num)
     {
@@ -79,6 +85,8 @@ public class Sound {
             sound.stop(miss_id);
         if(num==7)
             sound.stop(fly_id);
+        if(num==8)
+            sound.stop(cheerup_id);
 
     }
 

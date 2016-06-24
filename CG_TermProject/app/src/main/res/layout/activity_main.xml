@@ -2,18 +2,25 @@
     android:orientation="vertical"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    >
+    android:weightSum="1">
 
-    <ListView android:layout_height="wrap_content"
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="358dp"
+        android:id="@+id/imageView"
+        android:layout_weight="0.65" />
+
+    <ListView android:layout_height="102dp"
         android:id="@android:id/list"
-        android:layout_width="fill_parent"/>
+        android:layout_width="wrap_content"
+        android:textAlignment="center"
+        android:foreground="#b47ac7" />
 
     <TextView android:layout_width="wrap_content"
         android:id="@android:id/empty"
         android:text="@string/empty_string"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"/>
-
 
 
 </LinearLayout>

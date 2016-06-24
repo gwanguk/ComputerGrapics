@@ -1,6 +1,7 @@
 package com.medialab.android_gles_sample.renderer;
 
 
+import android.content.Context;
 import android.graphics.Shader;
 import android.media.AudioManager;
 import android.media.SoundPool;
@@ -136,6 +137,11 @@ public class BasicRenderer {
 	float target_speed = 0.5f;
 	float slow_speed = 1;
 
+	public int remain_time=100;
+	public int remain_bullet=10;
+	public int remain_cars=5;
+	public String result_text="";
+
 	int[] car_table =new int[5];
 
 	int ready=0;
@@ -150,10 +156,12 @@ public class BasicRenderer {
 	int render_start=0;
 
 	Sound mSound;
+	Context _context;
 
 	// vertex buffer
 
-	public BasicRenderer() {
+	public BasicRenderer(Context context) {
+		_context =context;
 		mWidth = 0;
 		mHeight = 0;
 		mDeltaTime = 0;
@@ -281,6 +289,7 @@ public class BasicRenderer {
 		ComputeTick();
 
 		mDeltaTime = 0.01;
+
 
 		//if (mIsAutoRotateEye) mCamera.RotateAuto(mDeltaTime);
 
@@ -481,7 +490,7 @@ public class BasicRenderer {
 	int vib=1;
 	float[] GetWorldMatrix_TARTGET()
 	{
-		moving_seed+=0.15*target_speed*slow_speed;
+		moving_seed+=0.2*target_speed*slow_speed;
 		target_location.set(target_origin.x+moving_seed,0.0f
 				,	target_origin.z);
 		float[] farray = new float[4*4];
@@ -501,10 +510,10 @@ public class BasicRenderer {
 		return farray;
 	}
 
-	Vector3f ter0 = new Vector3f(-500.0f, 0.0f,-20.0f);
+	Vector3f ter0 = new Vector3f(-520.0f, 0.0f,-20.0f);
 	Vector3f ter1 = new Vector3f(-420.0f, 0.0f,-15.0f);
-	Vector3f ter2 = new Vector3f(-470.0f, 0.0f,-17.0f);
-	Vector3f ter3 = new Vector3f(-430.0f, 0.0f,-19.0f);
+	Vector3f ter2 = new Vector3f(-490.0f, 0.0f,-17.0f);
+	Vector3f ter3 = new Vector3f(-450.0f, 0.0f,-19.0f);
 	Vector3f ter4 = new Vector3f(-550.0f, 0.0f,-17.0f);
 	Vector3f ter0_location = new Vector3f();
 	Vector3f ter1_location = new Vector3f();
@@ -514,12 +523,12 @@ public class BasicRenderer {
 	float left_right_seed=0;
 	float[] GetWorldMatrix_CAR()
 	{
-		left_right_seed+=0.007f;
+		left_right_seed+=0.009f;
 		if(left_right_seed>Math.PI*2)
 			left_right_seed=0;
 		Vector3f location = new Vector3f();
 		float left_right;
-		moving_seed+=0.16*target_speed*slow_speed;
+		moving_seed+=0.19*target_speed*slow_speed;
 		if(car_num==0)
 		{
 			left_right=(float)Math.sin((double)(left_right_seed)+2.5f)*slow_speed;
@@ -823,6 +832,14 @@ public class BasicRenderer {
 				slow_speed=1;
 				bullet_scale=1;
 				fly_start=0;
+				remain_cars--;
+				if(remain_cars==0)
+				{
+					mSound.sound_stop(1);
+					mSound.sound_stop(7);
+					mSound.sound_play(8);
+					result_text="GOOD!";
+				}
 			}
 		}
 		Vector3f va = new Vector3f(0.0f, 0.0f, -1.0f);
@@ -1000,6 +1017,7 @@ public class BasicRenderer {
 			if(fly_start==0) {
 				mSound.sound_play(7);
 				fly_start=1;
+				remain_bullet--;
 			}
 			GetCamera().setAT(proj_aim_location);
 			Vector3f tmp = new Vector3f();
@@ -1089,6 +1107,7 @@ public class BasicRenderer {
 			mSound.sound_play(1);
 			render_start=1;
 		}
+		remain_time = 100- (int)((target_location.x+400.0f)/800.0f *100.0f);
 		GLES20.glEnable(GLES20.GL_BLEND);
 		GLES20.glBlendFunc(GLES20.GL_ONE, GLES20.GL_ZERO);
 
@@ -1193,11 +1212,12 @@ public class BasicRenderer {
 			}
 
 			CreateVbo(car);
-			for(car_num=0;car_num<5;car_num++)
-			{
-				if(car_table[car_num]==1) {
-					PassUniform(mShader, 13, 1);
-					GLES20.glDrawElements(GLES20.GL_TRIANGLES, car.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
+			if(remain_cars>0) {
+				for (car_num = 0; car_num < 5; car_num++) {
+					if (car_table[car_num] == 1) {
+						PassUniform(mShader, 13, 1);
+						GLES20.glDrawElements(GLES20.GL_TRIANGLES, car.mIndexSize, GLES20.GL_UNSIGNED_SHORT, 0);
+					}
 				}
 			}
 		}

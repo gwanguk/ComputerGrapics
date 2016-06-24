@@ -1,6 +1,8 @@
 package com.medialab.android_gles_sample;
 
 import android.app.Activity;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.view.MotionEvent;
 import android.view.View;
@@ -36,7 +38,7 @@ public abstract class SampleView extends Activity implements SensorEventListener
         mGLView = new GLView(this);
         mGLViewCallback = new GLViewCallback(this);
         mSound = new Sound(this);
-        mRenderer = new BasicRenderer();
+        mRenderer = new BasicRenderer(this);
         mRenderer.SetSound(mSound);
         mGLView.setRenderer(mGLViewCallback);
         setContentView(mGLView);
@@ -63,9 +65,10 @@ public abstract class SampleView extends Activity implements SensorEventListener
             accX= (int)(event.values[0] );
             accY= (int)(event.values[1] );
             accZ= (int)(event.values[2] );
-            mGLViewCallback.accX =accX;
-            mGLViewCallback.accY= accY;
-            mGLViewCallback.accZ  =accZ;
+            mGLViewCallback.remaining_bullet = mRenderer.remain_bullet;
+            mGLViewCallback.remaining_car = mRenderer.remain_cars;
+            mGLViewCallback.remaining_time = mRenderer.remain_time;
+            mGLViewCallback.result_text = mRenderer.result_text;
             mRenderer.accX= accX;
             mRenderer.accY=accY;
             mRenderer.accZ=accZ;
@@ -91,8 +94,10 @@ public abstract class SampleView extends Activity implements SensorEventListener
         this.addContentView(btnLayout, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT));
 
-        mGLViewCallback.tvFpsText  = (TextView) findViewById(R.id.tvFps);
-        mGLViewCallback.sensor = (TextView) findViewById(R.id.sensor);
+        mGLViewCallback.time  = (TextView) findViewById(R.id.time);
+        mGLViewCallback.bullet = (TextView) findViewById(R.id.bullet);
+        mGLViewCallback.car = (TextView) findViewById(R.id.car);
+        mGLViewCallback.result = (TextView) findViewById(R.id.result);
 
     }
 

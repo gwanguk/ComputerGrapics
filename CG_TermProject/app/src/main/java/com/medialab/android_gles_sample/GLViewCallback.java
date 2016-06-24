@@ -1,9 +1,14 @@
 package com.medialab.android_gles_sample;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.opengl.GLSurfaceView;
 import android.os.Handler;
 import android.util.Log;
+import android.widget.ImageView;
 import android.widget.TextView;
+
+import org.w3c.dom.Text;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -17,6 +22,8 @@ public class GLViewCallback implements GLSurfaceView.Renderer{
 
 
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
+
+
         // Create a minimum supported OpenGL ES context, then check:
         String version = gl.glGetString(
                 GL10.GL_VERSION);
@@ -32,8 +39,10 @@ public class GLViewCallback implements GLSurfaceView.Renderer{
     }
 
     public float deltaTime;
-    public TextView tvFpsText;
-    public TextView sensor;
+    public TextView bullet;
+    public TextView car;
+    public TextView time;
+    public TextView result;
     private double prevTime = System.currentTimeMillis();
     private final Handler mHandler = new Handler();
     private int numFrame = 0;
@@ -42,6 +51,10 @@ public class GLViewCallback implements GLSurfaceView.Renderer{
     public float accX=0;
     public float accY=0;
     public float accZ=0;
+    public int remaining_bullet=6;
+    public int remaining_car=5;
+    public int remaining_time=100;
+    public String result_text ="";
 
     public void onDrawFrame(GL10 gl) {
 
@@ -54,7 +67,7 @@ public class GLViewCallback implements GLSurfaceView.Renderer{
         prevTime = currTime;
         if(accumTime > 250.0f) {
             fps = numFrame / (accumTime / 1000);
-            accumTime = 0;
+            //accumTime = 0;
             numFrame = 0;
         }
 
@@ -62,8 +75,10 @@ public class GLViewCallback implements GLSurfaceView.Renderer{
             public void run() {
                 mHandler.post(new Runnable() {
                     public void run() {
-                        if(tvFpsText != null) tvFpsText.setText("FPS : " + String.format("%.2f", fps));
-                        if(sensor!=null) sensor.setText(String.format("accX : %.2f, accY : %.2f, accZ : %.2f",accX, accY, accZ));
+                        if(time != null) time.setText("TIME : " + String.format("%d second", remaining_time));
+                        if(car!=null) car.setText(String.format("Remaning Enemy: %d",remaining_car));
+                        if(bullet!=null) bullet.setText(String.format("Remaing Bullet : %d", remaining_bullet));
+                        if(bullet!=null) result.setText(String.format("%s", result_text));
                     }
                 });
             }
